@@ -1,6 +1,6 @@
 import numpy as np
 import utils
-from test import test_grid
+import yaml
 
 
 def initialise_grid(grid_width, grid_height):
@@ -104,7 +104,7 @@ def update_node_weights(node_weights, lr, influence, input_vector):
     return node_weights + lr * influence * (input_vector - node_weights)
 
 
-def train(radius, grid, max_iter, input_matrix, learning_rate, grid_width, grid_height):
+def train(radius, grid, input_matrix, max_iter, learning_rate, grid_width, grid_height):
     # Initialise
     trained_grid = grid
 
@@ -128,29 +128,32 @@ def train(radius, grid, max_iter, input_matrix, learning_rate, grid_width, grid_
 
 if __name__ == "__main__":
     # Set random seed
-    np.random.seed(10)
+    np.random.seed(40)
 
-    # Initialise training params
-    grid_width = 9  # zero-based indexing
-    grid_height = 9  # zero-based indexing
-    max_iter = 500  # risky, if 0 then runtime error because radius is 0, and log(0) in update_lr
-    learning_rate = 0.1
+    # Get params
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f)
 
-    grid = initialise_grid(grid_width, grid_height)
-    input_matrix = np.random.rand(20, 3)
-    initial_radius = max(grid_width, grid_height) / 2
+    # Setup training inputs
+    grid = initialise_grid(config["grid_width"], config["grid_height"])
+    initial_radius = max(config["grid_width"], config["grid_height"]) / 2
+    input_matrix = np.random.rand(
+        config["num_input_vectors"], config["dim_of_input_vector"]
+    )
 
+    # Plot before
     utils.plot_pixel_grid(grid, "plot_of_initial_grid.png")
 
     # Train
     trained_grid = train(
         initial_radius,
         grid,
-        max_iter,
         input_matrix,
-        learning_rate,
-        grid_width,
-        grid_height,
+        config["max_iter"],
+        config["learning_rate"],
+        config["grid_width"],
+        config["grid_height"],
     )
 
+    # Plot after
     utils.plot_pixel_grid(trained_grid, "plot_of_trained_grid.png")

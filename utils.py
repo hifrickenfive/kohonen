@@ -53,12 +53,13 @@ def plot_pixel_grid(pixel_dict, filename):
     # Set ticks as integers
     min_x = min(key[0] for key in pixel_dict.keys())
     min_y = min(key[1] for key in pixel_dict.keys())
-    plt.xticks(np.arange(min_x, max_x + 1, 1))
-    plt.yticks(np.arange(min_y, max_y + 1, 1))
+
+    tick_step = 2
+    plt.xticks(np.arange(min_x, max_x + 1, tick_step))
+    plt.yticks(np.arange(min_y, max_y + 1, tick_step))
 
     # Display the pixel grid
     plt.imshow(pixel_grid)
-    # plt.axis("off")
     plt.savefig(
         filename
     )  # https://stackoverflow.com/questions/9012487/savefig-outputs-blank-image
