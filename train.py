@@ -1,13 +1,13 @@
 import numpy as np
 import utils
+from test import test_grid
 
 
-def initialise_grid(grid_width, grid_height, node_weight_range):
+def initialise_grid(grid_width, grid_height):
     """Initialise the grid with random weight vectors
     Args:
         grid_width (int)
         grid_height (int)
-        node_weight_range (tuple of ints)
 
     Returns:
         grid (dict): keys are the coordinates (tuples) of the grid, values are weight vectors
@@ -17,7 +17,6 @@ def initialise_grid(grid_width, grid_height, node_weight_range):
     grid = dict()
     for node in all_nodes:
         grid[node] = np.random.random((1, 3))
-        # grid[node] = np.random.randint(node_weight_range[0], node_weight_range[1], 3)
     return grid
 
 
@@ -129,19 +128,19 @@ def train(radius, grid, max_iter, input_matrix, learning_rate, grid_width, grid_
 
 if __name__ == "__main__":
     # Set random seed
-    np.random.seed(42)
+    np.random.seed(10)
 
     # Initialise training params
     grid_width = 9  # zero-based indexing
     grid_height = 9  # zero-based indexing
-    node_weight_range = (0, 255)
-    max_iter = 100  # risky, if 0 then runtime error because radius is 0, and log(0) in update_lr
-    grid = initialise_grid(grid_width, grid_height, node_weight_range)
-    input_matrix = np.random.rand(20, 3)
-    initial_radius = max(grid_width, grid_height) / 2
+    max_iter = 500  # risky, if 0 then runtime error because radius is 0, and log(0) in update_lr
     learning_rate = 0.1
 
-    utils.plot_pixel_grid(grid, "initial_grid.png")
+    grid = initialise_grid(grid_width, grid_height)
+    input_matrix = np.random.rand(20, 3)
+    initial_radius = max(grid_width, grid_height) / 2
+
+    utils.plot_pixel_grid(grid, "plot_of_initial_grid.png")
 
     # Train
     trained_grid = train(
@@ -154,4 +153,4 @@ if __name__ == "__main__":
         grid_height,
     )
 
-    utils.plot_pixel_grid(trained_grid, "trained_grid.png")
+    utils.plot_pixel_grid(trained_grid, "plot_of_trained_grid.png")
