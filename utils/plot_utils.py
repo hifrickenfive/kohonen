@@ -8,6 +8,7 @@ def plot_pixel_grid(
 ):
     """
     Plot a grid of pixels
+
     Args:
         pixel_dict: a dictionary of pixel positions and colours
         filename: the filename of the plot to be saved
@@ -32,15 +33,6 @@ def plot_pixel_grid(
 
     plt.xticks(np.arange(min_x, max_x + 1, tick_step))
     plt.yticks(np.arange(min_y, max_y + 1, tick_step))
-
-    # Display the pixel grid
-    # plt.figure()
-    # plt.imshow(pixel_grid)
-    # plt.savefig(
-    #     filename
-    # )  # https://stackoverflow.com/questions/9012487/savefig-outputs-blank-image
-    # plt.clf()  # clear the plot after saving to prevent overlapping plots
-    # plt.close()  # close the plot to prevent memory leaks
 
     fig, ax = plt.subplots()
     ax.imshow(pixel_grid)

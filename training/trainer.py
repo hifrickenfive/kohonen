@@ -1,4 +1,3 @@
-import copy
 import numpy as np
 from typing import Dict, Tuple
 from model.model import (
@@ -61,7 +60,7 @@ def training_loop(
 
     Args:
         radius: The initial neighborhood radius.
-        grid: A dictionary mapping grid coordinates (tuple of ints) to node weights (numpy arrays).
+        grid: A dict mapping grid coordinates to node weights.
         input_matrix: An array of input vectors for training.
         max_iter: The maximum number of iterations to perform.
         learning_rate: The initial learning rate.
@@ -69,7 +68,7 @@ def training_loop(
         grid_height: The height of the grid.
 
     Returns:
-        The trained grid as a dictionary with the same structure as the input grid.
+        The trained grid with the same structure as the input grid.
     """
     # Initialise
     trained_grid = (

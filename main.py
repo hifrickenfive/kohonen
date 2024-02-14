@@ -58,7 +58,10 @@ if __name__ == "__main__":
         help="Path to config file",
     )
     parser.add_argument(
-        "--plot", "-p", action="store_true", help="Plot initialised map vs. trained map"
+        "--plot",
+        "-p",
+        action="store_true",
+        help="Plot initialised map vs. trained pixel map",
     )
 
     args = parser.parse_args()

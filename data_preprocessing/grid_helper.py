@@ -1,6 +1,5 @@
 import numpy as np
 from typing import List, Dict, Tuple
-import utils
 
 
 def initialise_grid(
@@ -14,7 +13,7 @@ def initialise_grid(
         grid_height: The height of the grid.
 
     Returns:
-        grid (dict): keys are the coordinates (tuples) of the grid, values are weight vectors
+        grid: grid coordinates mapped to weight vectors.
     """
     all_nodes = pairwise_permutations_grid(grid_width, grid_height)
     grid = dict()
@@ -23,12 +22,20 @@ def initialise_grid(
     return grid
 
 
-def pairwise_permutations_grid(x, y):
+def pairwise_permutations_grid(x: int, y: int) -> List[Tuple[int, int]]:
+    """Create a list of tuples of all permutations of values in the range [0, x] and [0, y]
+
+    Args:
+        x: the maximum value in the x-axis (columns).
+        y: the maximum value in the y-axis (rows).
+
+    Returns:
+        pairwise_tuples
+    """
     # Create an array of values in the range [-r, +r]
     x_values = np.arange(0, x + 1)
     y_values = np.arange(0, y + 1)
 
-    # Create a meshgrid of all possible combinations of values
     X, Y = np.meshgrid(x_values, y_values)
 
     # Reshape the meshgrid to get pairs of values
@@ -40,9 +47,17 @@ def pairwise_permutations_grid(x, y):
     return pairwise_tuples
 
 
-def pairwise_permutations_square(r):
+def pairwise_permutations_square(radius: int) -> List[Tuple[int, int]]:
+    """
+    Create a list of tuples of all permutations of values in the range [-r, +r]
+    Args:
+        radius: the radius
+
+    Returns:
+        pairwise_tuples
+    """
     # Create an array of values in the range [-r, +r]
-    values = np.arange(-r, r + 1)
+    values = np.arange(-radius, radius + 1)
 
     # Create a meshgrid of all possible combinations of values
     X, Y = np.meshgrid(values, values)
