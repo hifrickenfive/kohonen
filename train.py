@@ -1,18 +1,22 @@
 import numpy as np
+from typing import List, Dict, Tuple
 import utils
 import yaml
 
 
-def initialise_grid(grid_width, grid_height):
-    """Initialise the grid with random weight vectors
+def initialise_grid(
+    grid_width: int, grid_height: int
+) -> Dict[Tuple[int, int], np.ndarray]:
+    """
+    Initialise the grid with random weight vectors
+
     Args:
-        grid_width (int)
-        grid_height (int)
+        grid_width: The width of the grid.
+        grid_height: The height of the grid.
 
     Returns:
         grid (dict): keys are the coordinates (tuples) of the grid, values are weight vectors
     """
-    # x = width, y = height
     all_nodes = utils.pairwise_permutations_grid(grid_width, grid_height)
     grid = dict()
     for node in all_nodes:
@@ -20,49 +24,61 @@ def initialise_grid(grid_width, grid_height):
     return grid
 
 
-def find_bmu(grid, input_vector, type="euclidean"):
-    """Find the best matching unit (BMU) for a given input vector
+def find_bmu(
+    grid: Dict[Tuple[int, int], np.ndarray], input_vector: np.ndarray
+) -> Tuple[int, int]:
+    """Find the best matching unit (BMU) in the grid for a given input vector
     Args:
-        grid (dict): keys are the coordinates (tuples) of the grid, values are weight vectors
-        input_vector (np.array): input vector
+        grid: keys are the grid coordinates, values are weight vectors
+        input_vector: the input vector
 
     Returns:
-        bmu (tuple): coordinates of the BMU
+        bmu: coordinates of the BMU in the grid
     """
-    min_dist = np.inf
-    if type == "euclidean":
-        for node in grid.keys():
-            dist = np.linalg.norm(grid[node] - input_vector)
-            if dist < min_dist:
-                min_dist = dist
-                bmu = node
+    weight_vectors = np.array(
+        list(grid.values())
+    )  # convert to np so we can use broadcasting but n, 1, dim
+    weight_vectors = np.squeeze(weight_vectors)  # n, dim
+    distances = np.linalg.norm(
+        weight_vectors - input_vector, axis=1
+    )  # axis=1 gives us the norm of each row
+    min_index = np.argmin(distances)
+    bmu = list(grid.keys())[min_index]
     return bmu
 
 
-def calc_neighbourhood_radius(current_radius, max_iter, current_iter):
-    """_summary_
-
-    Args:
-        current_radius (float)
-        max_iter (int)
-        current_iter (int)
-
-    Returns:
-        radius (float)
+def calc_neighbourhood_radius(
+    current_radius: float, max_iter: int, current_iter: int
+) -> float:
     """
-    radius = current_radius * np.exp(-current_iter / max_iter)
-    return radius
-
-
-def get_neighbourhood_nodes(bmu, radius, grid_width, grid_height):
-    """_summary_
+    Calculate the neighbourhood radius at a given iteration
 
     Args:
-        bmu (tuple): _description_
-        neighbourhood_params (_type_): _description_
+        current_radius: the current radius
+        max_iter: the maximum number of iterations
+        current_iter: the current iteration
 
     Returns:
-        candidate_nodes (list): list of nodes (tuples) in the neighbourhood of the BMU
+        radius: the updated radius
+    """
+    updated_radius = current_radius * np.exp(-current_iter / max_iter)
+    return updated_radius
+
+
+def get_neighbourhood_nodes(
+    bmu: Tuple[int, int], radius: float, grid_width: int, grid_height: int
+) -> List[Tuple[int, int]]:
+    """
+    Get the nodes in the neighbourhood of the BMU given a radius
+
+    Args:
+        bmu: coordinates of the BMU
+        radius: the radius of the neighbourhood
+        grid_width: the width of the grid
+        grid_height: the height of the grid
+
+    Returns:
+        neighbourhood_nodes: list of nodes in the neighbourhood of the BMU
     """
     # Reduce search space to a square around the BMU
     radius_rounded = np.floor(radius)
@@ -83,33 +99,92 @@ def get_neighbourhood_nodes(bmu, radius, grid_width, grid_height):
     return neighbourhood_nodes
 
 
-def update_lr(current_iter, current_lr, current_radius, max_iter):
+def update_lr(
+    current_iter: int, current_lr: int, current_radius: float, max_iter: int
+) -> float:
+    """
+    Update the learning rate at a given iteration
+
+    Args:
+        current_iter: the current iteration
+        current_lr: the current learning rate
+        current_radius: the current radius
+        max_iter: the maximum number of iterations
+
+    Returns:
+        updated_ lr: the updated learning rate
+    """
     time_constant = max_iter / np.log(current_radius)
-    return current_lr * np.exp(-current_iter / time_constant)
+    updated_lr = current_lr * np.exp(-current_iter / time_constant)
+    return updated_lr
 
 
-def calc_influence(node, bmu, radius):
+def calc_influence(node: Tuple[int, int], bmu: Tuple[int, int], radius: float) -> float:
+    """
+    Calculate the influence of the BMU on a given node
+
+    Args:
+        node: the coordinates of the node
+        bmu: the coordinates of the BMU
+        radius: the radius of the neighbourhood from the BMU
+
+    Returns:
+        influence: the influence of the BMU on the node
+    """
     dist = np.linalg.norm(np.array(bmu) - np.array(node))
     influence = np.exp(-(dist**2) / (2 * radius**2))
     return influence
 
 
-def update_node_weights(node_weights, lr, influence, input_vector):
+def update_node_weights(
+    node_weights: np.ndarray, lr: float, influence: float, input_vector: np.ndarray
+) -> np.ndarray:
     """_summary_
 
     Args:
-        neighbourhood_nodes (_type_): _description_
-        weight_update_params (_type_): _description_
+        node_weights: the weights of the node
+        lr: the learning rate
+        influence: the influence of the BMU on the node
+        input_vector: the input vector
+
+    Returns:
+        updated_node_weights: the updated weights of the node
     """
-    return node_weights + lr * influence * (input_vector - node_weights)
+    updated_node_weights = node_weights + lr * influence * (input_vector - node_weights)
+    return updated_node_weights
 
 
-def train(radius, grid, input_matrix, max_iter, learning_rate, grid_width, grid_height):
+def train(
+    radius: float,
+    grid: Dict[Tuple[int, int], np.ndarray],
+    input_matrix: np.ndarray,
+    max_iter: int,
+    learning_rate: int,
+    grid_width: int,
+    grid_height: int,
+) -> Dict[Tuple[int, int], np.ndarray]:
+    """
+    Trains a Kohonen map
+
+    Args:
+        radius: The initial neighborhood radius.
+        grid: A dictionary mapping grid coordinates (tuple of ints) to node weights (numpy arrays).
+        input_matrix: An array of input vectors for training.
+        max_iter: The maximum number of iterations to perform.
+        learning_rate: The initial learning rate.
+        grid_width: The width of the grid.
+        grid_height: The height of the grid.
+
+    Returns:
+        The trained grid as a dictionary with the same structure as the input grid.
+    """
     # Initialise
     trained_grid = grid
 
     for current_iter in range(max_iter):
+
         print(f"Training iteration {current_iter + 1}/{max_iter}")
+
         for input_vector in input_matrix:
             bmu = find_bmu(trained_grid, input_vector)
             radius = calc_neighbourhood_radius(radius, max_iter, current_iter)
@@ -134,12 +209,17 @@ if __name__ == "__main__":
     with open("config.yaml", "r") as f:
         config = yaml.safe_load(f)
 
+    grid_width = int(config["grid_width"])
+    grid_height = int(config["grid_height"])
+    num_input_vectors = int(config["num_input_vectors"])
+    dim_of_input_vector = int(config["dim_of_input_vector"])
+    max_iter = int(config["max_iter"])
+    lr = float(config["learning_rate"])
+
     # Setup training inputs
-    grid = initialise_grid(config["grid_width"], config["grid_height"])
-    initial_radius = max(config["grid_width"], config["grid_height"]) / 2
-    input_matrix = np.random.rand(
-        config["num_input_vectors"], config["dim_of_input_vector"]
-    )
+    grid: Dict[Tuple[int, int], np.ndarray] = initialise_grid(grid_width, grid_height)
+    initial_radius: float = max(grid_width, grid_height) / 2
+    input_matrix: np.ndarray = np.random.rand(num_input_vectors, dim_of_input_vector)
 
     # Plot before
     utils.plot_pixel_grid(grid, "plot_of_initial_grid.png")
@@ -149,10 +229,10 @@ if __name__ == "__main__":
         initial_radius,
         grid,
         input_matrix,
-        config["max_iter"],
-        config["learning_rate"],
-        config["grid_width"],
-        config["grid_height"],
+        max_iter,
+        lr,
+        grid_width,
+        grid_height,
     )
 
     # Plot after
