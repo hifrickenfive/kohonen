@@ -1,6 +1,7 @@
-import yaml
-import sys
 import jsonschema
+import os
+import sys
+import yaml
 
 
 def load_YAML_config(path_to_config_file: str):
@@ -11,16 +12,21 @@ def load_YAML_config(path_to_config_file: str):
     Returns:
         config: the loaded config file else exit with error
     """
+    # Set path to work for local and docker
+    filename_with_ext = os.path.basename(path_to_config_file)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    full_config_file_path = os.path.join(script_dir, filename_with_ext)
+
     try:
-        with open(path_to_config_file, "r") as f:
+        with open(full_config_file_path, "r") as f:
             config = yaml.safe_load(f)
         return config
     except FileNotFoundError:
-        print(f"Error: YAML config file '{path_to_config_file}' not found.")
+        print(f"Error: YAML config file '{full_config_file_path}' not found.")
         sys.exit(1)
     except yaml.YAMLError as e:
         print(
-            f"Error YAML format incorrect in config file '{path_to_config_file}': {e}"
+            f"Error YAML format incorrect in config file '{full_config_file_path}': {e}"
         )
         sys.exit(1)
 
