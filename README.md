@@ -5,9 +5,12 @@ Deviations from the specifications are permitted.
 # Requirements
 pip install -r requirements.txt
 
-# Usage
+# Usage (terminal)
 python main.py 
 python main.py <path_to_config_file> <plot_option>
+
+# Usage (streamlit)
+streamlit run streamlit.py
 
 ## Profiling
 To profile main.py run the below
