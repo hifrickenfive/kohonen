@@ -4,22 +4,27 @@ import sys
 import yaml
 
 
-def load_YAML_config(path_to_config_file: str):
+def load_and_check_config(config_file: str):
     """
     Load a YAML config file
     Args:
-        config_file: path to the config file
+        config_file: config file name with with extension
     Returns:
         config: the loaded config file else exit with error
     """
-    # Set path to work for local and docker
-    filename_with_ext = os.path.basename(path_to_config_file)
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    full_config_file_path = os.path.join(script_dir, filename_with_ext)
+    root_project_dir = os.path.normpath(os.path.join(script_dir, ".."))
+
+    filename_with_ext = os.path.basename(config_file)
+
+    full_config_file_path = os.path.join(
+        root_project_dir, "config", filename_with_ext
+    )  # to resolve compatibility linux vs. windows
 
     try:
         with open(full_config_file_path, "r") as f:
             config = yaml.safe_load(f)
+        check_config(config)
         return config
     except FileNotFoundError:
         print(f"Error: YAML config file '{full_config_file_path}' not found.")
@@ -29,28 +34,6 @@ def load_YAML_config(path_to_config_file: str):
             f"Error YAML format incorrect in config file '{full_config_file_path}': {e}"
         )
         sys.exit(1)
-
-
-def check_expected_config_fields(config):
-    """
-    Check if expected parameters are in the YAML config file
-
-    Args:
-        config (loaded YAML file)
-    """
-    expected_params = [
-        "grid_width",
-        "grid_height",
-        "max_iter",
-        "learning_rate",
-        "num_input_vectors",
-        "dim_of_input_vector",
-        "random_seed",
-    ]
-    for param in expected_params:
-        if param not in config:
-            print(f"Error: '{param}' missing from config file.")
-            sys.exit(1)
 
 
 def check_config(config):

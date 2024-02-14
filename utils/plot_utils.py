@@ -4,7 +4,10 @@ from typing import Dict, Tuple
 
 
 def plot_pixel_grid(
-    pixel_dict: Dict[Tuple[int, int], np.ndarray], filename: str, tick_step=2
+    pixel_dict: Dict[Tuple[int, int], np.ndarray],
+    filename: str,
+    config: dict,
+    tick_step=2,
 ):
     """
     Plot a grid of pixels
@@ -35,6 +38,21 @@ def plot_pixel_grid(
     plt.yticks(np.arange(min_y, max_y + 1, tick_step))
 
     fig, ax = plt.subplots()
+
+    # Add annotation in bottom left corner of config values
+    params_text = "\n".join(f"{key}: {value}" for key, value in config.items())
+    plt.text(
+        0.05,
+        0.05,
+        params_text,
+        transform=ax.transAxes,  # set position in axis coordinates i.e. (0,0) bottom left
+        fontsize=8,
+        verticalalignment="bottom",
+        # bbox=dict(facecolor="white", alpha=0.2),  # lower alpha = more transparency
+    )
+
     ax.imshow(pixel_grid)
     fig.savefig(filename)
     plt.close(fig)  # Close the specific figure
+
+    return fig

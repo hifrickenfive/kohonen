@@ -1,49 +1,45 @@
 import argparse
 import numpy as np
-import os
+import time
 from typing import Dict, Tuple
 from data_preprocessing.grid_helper import initialise_grid
 from training.trainer import training_loop
 from utils.plot_utils import plot_pixel_grid
-from config.config_helper import load_YAML_config, check_config
+from config.config_helper import load_and_check_config
 
 
-def main(config_file: str, plot: bool = False):
+def run_main_function(config: dict):
 
-    # Get params
-    config = load_YAML_config(config_file)
-    check_config(config)
+    # Set random seed
+    np.random.seed(config["random_seed"])
 
-    np.random.seed(int(config["random_seed"]))
-    grid_width = int(config["grid_width"])
-    grid_height = int(config["grid_height"])
-    num_input_vectors = int(config["num_input_vectors"])
-    dim_of_input_vector = int(config["dim_of_input_vector"])
-    max_iter = int(config["max_iter"])
-    lr = float(config["learning_rate"])
-
-    # Setup training inputs
-    grid: Dict[Tuple[int, int], np.ndarray] = initialise_grid(grid_width, grid_height)
-    initial_radius: float = max(grid_width, grid_height) / 2
-    input_matrix: np.ndarray = np.random.rand(num_input_vectors, dim_of_input_vector)
+    # Set inputs
+    grid: Dict[Tuple[int, int], np.ndarray] = initialise_grid(
+        config["grid_width"], config["grid_height"]
+    )
+    initial_radius: float = max(config["grid_width"], config["grid_height"]) / 2
+    input_matrix: np.ndarray = np.random.rand(
+        config["num_input_vectors"], config["dim_of_input_vector"]
+    )
 
     # Train
     trained_grid = training_loop(
         initial_radius,
         grid,
         input_matrix,
-        max_iter,
-        lr,
-        grid_width,
-        grid_height,
+        config["max_iter"],
+        config["learning_rate"],
+        config["grid_width"],
+        config["grid_height"],
     )
 
-    if plot:
-        config_filename = os.path.splitext(os.path.basename(config_file))[0]
-        filename_initial_grid = f"exp/plot_of_initial_grid_{config_filename}.png"
-        filename_trained_grid = f"exp/plot_of_trained_grid_{config_filename}.png"
-        plot_pixel_grid(grid, filename_initial_grid)
-        plot_pixel_grid(trained_grid, filename_trained_grid)
+    # Plot
+    timestamp = int(time.time())
+    filename_initial_grid = f"exp/plot_of_initial_grid_{timestamp}.png"
+    filename_trained_grid = f"exp/plot_of_trained_grid_{timestamp}.png"
+    fig_initial_grid = plot_pixel_grid(grid, filename_initial_grid, config)
+    fig_trained_grid = plot_pixel_grid(trained_grid, filename_trained_grid, config)
+    return fig_initial_grid, fig_trained_grid
 
 
 if __name__ == "__main__":
@@ -54,15 +50,9 @@ if __name__ == "__main__":
         "config_file",
         type=str,
         nargs="?",
-        default="config\\default_config.yaml",
-        help="Path to config file",
+        default="default_config.yaml",
+        help="Name of config file in config directory. Default: default_config.yaml",
     )
-    parser.add_argument(
-        "--plot",
-        "-p",
-        action="store_true",
-        help="Plot initialised map vs. trained pixel map",
-    )
-
     args = parser.parse_args()
-    main(args.config_file, args.plot)
+    config = load_and_check_config(args.config_file)
+    run_main_function(config)
