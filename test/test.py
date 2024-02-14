@@ -1,7 +1,7 @@
 import numpy as np
 
-# Given array
-test_grid = np.array(
+# Given array from customer spec
+test_case1 = np.array(
     [
         [0.06623834, 0.41323115, 0.5055075],
         [0.27841281, 0.35846549, 0.46476453],
