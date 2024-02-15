@@ -18,11 +18,11 @@ def find_bmu(
         list(grid.values())
     )  # convert to np so we can use broadcasting but n, 1, dim
     weight_vectors = np.squeeze(weight_vectors)  # n, dim
-    distances = np.linalg.norm(
-        weight_vectors - input_vector, axis=1
-    )  # axis=1 gives us the norm of each row
-    min_index = np.argmin(distances)
-    dist_to_bmu = distances[min_index]
+    distances_squared = np.sum(
+        (weight_vectors - input_vector) ** 2, axis=1
+    )  # axis=1 along each row
+    min_index = np.argmin(distances_squared)
+    dist_to_bmu = distances_squared[min_index]
     bmu = list(grid.keys())[min_index]
     return bmu, dist_to_bmu
 
@@ -85,14 +85,12 @@ def get_neighbourhood_nodes(
         & (candidate_nodes[:, 1] >= 0)
         & (candidate_nodes[:, 1] < grid_height + 1)
     )
+    candidate_nodes = candidate_nodes[valid_nodes]  # filter
 
     # Prune nodes outside the radius
-    distances = np.linalg.norm(candidate_nodes - np.array(bmu), axis=1)
-    within_radius = distances <= radius
-
-    # Bit logic the indices, then get values from candidate nodes
-    _neighbourhood_nodes = candidate_nodes[valid_nodes & within_radius]
-    neighbourhood_nodes = [tuple(node) for node in _neighbourhood_nodes]
+    distances_sq = np.sum((candidate_nodes - np.array(bmu)) ** 2, axis=1)
+    within_radius = distances_sq <= radius**2
+    neighbourhood_nodes = [tuple(node) for node in candidate_nodes[within_radius]]
 
     return neighbourhood_nodes
 

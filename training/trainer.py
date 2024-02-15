@@ -98,4 +98,4 @@ def training_loop(
         all_av_dist_to_bmu.append(av_dist_to_bmu_iter)
 
     final_av_dist_to_bmu = np.mean(all_dist_to_bmu)
-    return trained_grid, final_av_dist_to_bmu
+    return trained_grid, np.sqrt(final_av_dist_to_bmu)
