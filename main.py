@@ -1,14 +1,17 @@
 import argparse
+from datetime import datetime
 import numpy as np
 import time
 from typing import Dict, Tuple
+from config.config_helper import load_and_check_config
 from data_preprocessing.grid_helper import initialise_grid
 from training.trainer import training_loop
 from utils.plot_utils import plot_pixel_grid
-from config.config_helper import load_and_check_config
+from utils.log_utils import create_log
 
 
 def run_main_function(config: dict):
+    start_time = time.time()
 
     # Set random seed
     np.random.seed(config["random_seed"])
@@ -23,7 +26,7 @@ def run_main_function(config: dict):
     )
 
     # Train
-    trained_grid = training_loop(
+    trained_grid, final_av_dist_to_bmu = training_loop(
         initial_radius,
         grid,
         input_matrix,
@@ -33,13 +36,24 @@ def run_main_function(config: dict):
         config["grid_height"],
     )
 
-    # Plot
-    timestamp = int(time.time())
-    filename_initial_grid = f"exp/plot_of_initial_grid_{timestamp}.png"
-    filename_trained_grid = f"exp/plot_of_trained_grid_{timestamp}.png"
+    # Plot results
+    now = datetime.now()
+    date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
+    filename_initial_grid = f"exp/plot_of_initial_grid_{date_time}.png"
+    filename_trained_grid = f"exp/plot_of_trained_grid_{date_time}.png"
     fig_initial_grid = plot_pixel_grid(grid, filename_initial_grid, config)
     fig_trained_grid = plot_pixel_grid(trained_grid, filename_trained_grid, config)
-    return fig_initial_grid, fig_trained_grid
+
+    # Log
+    end_time = time.time()
+    log_message = (
+        f"Datetime: {datetime.now()}\n"
+        f"Config: {config} \n"
+        f"Elapsed time: {(end_time - start_time):.2f} seconds\n"
+        f"Final score: {final_av_dist_to_bmu:.3f}. final_av_dist_to_bmu. Lower is better."
+    )
+    create_log(log_message, "logs\\log.txt")
+    return fig_initial_grid, fig_trained_grid, log_message
 
 
 if __name__ == "__main__":
@@ -55,4 +69,5 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     config = load_and_check_config(args.config_file)
-    run_main_function(config)
+    __, __, log_message = run_main_function(config)
+    print(log_message)
