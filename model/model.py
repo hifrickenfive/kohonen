@@ -78,8 +78,12 @@ def get_neighbourhood_nodes(
     )  # broadcast is faster than list comprehension
 
     # prune nodes beyond grid limits (x,y) where x is width, y is height
-    valid_nodes = (candidate_nodes[:, 0] >= 0) & (candidate_nodes[:, 0] < grid_width) & \
-                  (candidate_nodes[:, 1] >= 0) & (candidate_nodes[:, 1] < grid_height)
+    valid_nodes = (
+        (candidate_nodes[:, 0] >= 0)
+        & (candidate_nodes[:, 0] < grid_width + 1)  # address 0 indexing
+        & (candidate_nodes[:, 1] >= 0)
+        & (candidate_nodes[:, 1] < grid_height + 1)
+    )
 
     # Prune nodes outside the radius
     distances = np.linalg.norm(candidate_nodes - np.array(bmu), axis=1)
