@@ -60,21 +60,35 @@ def get_neighbourhood_nodes(
         neighbourhood_nodes: list of nodes in the neighbourhood of the BMU
     """
     # Reduce search space to a square around the BMU
-    radius_rounded = np.floor(radius)
-    delta_nodes = pairwise_permutations_square(radius_rounded)
-    delta_nodes.remove((0, 0))  # remove the BMU
-    candidate_nodes = [tuple(np.array(bmu) + np.array(delta)) for delta in delta_nodes]
+    radius_rounded = int(np.floor(radius))  # int faster than float ops
+    # delta_nodes = pairwise_permutations_square(radius_rounded)
+    delta_x, delta_y = np.meshgrid(
+        np.arange(-radius_rounded, radius_rounded + 1),
+        np.arange(-radius_rounded, radius_rounded + 1),
+    )  # 2d array of x and y deltas
+    delta_nodes = np.column_stack(
+        (delta_x.ravel(), delta_y.ravel())
+    )  # flatten each 2d array and stack together to form 2 columns of x,y pairs
+    delta_nodes = delta_nodes[
+        ~np.all(delta_nodes == 0, axis=1)
+    ]  # remove bmu (0,0) by scanning across the rows, i.e. along columns
+    # candidate_nodes = [tuple(np.array(bmu) + np.array(delta)) for delta in delta_nodes]
+    candidate_nodes = (
+        np.array(bmu) + delta_nodes
+    )  # broadcast is faster than list comprehension
 
-    neighbourhood_nodes = []
-    for node in candidate_nodes:
-        # prune nodes beyond grid limits (x,y) where x is width, y is height
-        if node[0] < 0 or node[0] > grid_width or node[1] < 0 or node[1] > grid_height:
-            continue
+    # prune nodes beyond grid limits (x,y) where x is width, y is height
+    valid_nodes = (candidate_nodes[:, 0] >= 0) & (candidate_nodes[:, 0] < grid_width) & \
+                  (candidate_nodes[:, 1] >= 0) & (candidate_nodes[:, 1] < grid_height)
 
-        # prune nodes outside the radius
-        dist = np.linalg.norm(np.array(bmu) - np.array(node))
-        if dist <= radius_rounded:
-            neighbourhood_nodes.append(node)
+    # Prune nodes outside the radius
+    distances = np.linalg.norm(candidate_nodes - np.array(bmu), axis=1)
+    within_radius = distances <= radius
+
+    # Bit logic the indices, then get values from candidate nodes
+    _neighbourhood_nodes = candidate_nodes[valid_nodes & within_radius]
+    neighbourhood_nodes = [tuple(node) for node in _neighbourhood_nodes]
+
     return neighbourhood_nodes
 
 
