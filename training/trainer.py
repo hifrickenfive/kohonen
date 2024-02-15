@@ -23,8 +23,9 @@ def update_lr(
     Returns:
         updated_ lr: the updated learning rate
     """
-    time_constant = max_iter / np.log(current_radius)
-    updated_lr = current_lr * np.exp(-current_iter / time_constant)
+    eps = 1e-9  # prevent divide by zero error
+    time_constant = max_iter / np.log(current_radius + eps)
+    updated_lr = current_lr * np.exp(-current_iter / time_constant + eps)
     return updated_lr
 
 
@@ -75,12 +76,14 @@ def training_loop(
         grid.copy()
     )  # incur memory penalty to show before vs. after. Shallow ok
 
+    all_av_dist_to_bmu = list()
     for current_iter in range(max_iter):
 
-        print(f"Training iteration {current_iter + 1}/{max_iter}")
-
+        # print(f"Training iteration {current_iter + 1}/{max_iter}")
+        all_dist_to_bmu = list()
         for input_vector in input_matrix:
-            bmu = find_bmu(trained_grid, input_vector)
+            bmu, dist_to_bmu = find_bmu(trained_grid, input_vector)
+            all_dist_to_bmu.append(dist_to_bmu)
             radius = calc_neighbourhood_radius(radius, max_iter, current_iter)
             neighbourhood_nodes = get_neighbourhood_nodes(
                 bmu, radius, grid_width, grid_height
@@ -91,5 +94,8 @@ def training_loop(
                 trained_grid[node] = update_node_weights(
                     trained_grid[node], lr, influence, input_vector
                 )
+        av_dist_to_bmu_iter = np.mean(all_dist_to_bmu)
+        all_av_dist_to_bmu.append(av_dist_to_bmu_iter)
 
-    return trained_grid
+    final_av_dist_to_bmu = np.mean(all_dist_to_bmu)
+    return trained_grid, final_av_dist_to_bmu

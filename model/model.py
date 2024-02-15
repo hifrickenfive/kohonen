@@ -22,8 +22,9 @@ def find_bmu(
         weight_vectors - input_vector, axis=1
     )  # axis=1 gives us the norm of each row
     min_index = np.argmin(distances)
+    dist_to_bmu = distances[min_index]
     bmu = list(grid.keys())[min_index]
-    return bmu
+    return bmu, dist_to_bmu
 
 
 def calc_neighbourhood_radius(

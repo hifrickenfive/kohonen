@@ -1,21 +1,24 @@
 import argparse
+from datetime import datetime
 import numpy as np
 import time
 from typing import Dict, Tuple
+from config.config_helper import load_and_check_config
 from data_preprocessing.grid_helper import initialise_grid
 from training.trainer import training_loop
-from utils.plot_utils import plot_pixel_grid
-from config.config_helper import load_and_check_config
+from utils.plot_utils import plot_pixel_grid, plot_pixel_inputs
+from utils.log_utils import append_to_log_file, create_log_message
 
 
 def run_main_function(config: dict):
+    start_time = time.time()
 
     # Set random seed
     np.random.seed(config["random_seed"])
 
     # Set inputs
     grid: Dict[Tuple[int, int], np.ndarray] = initialise_grid(
-        config["grid_width"], config["grid_height"]
+        config["grid_width"], config["grid_height"], config["dim_of_input_vector"]
     )
     initial_radius: float = max(config["grid_width"], config["grid_height"]) / 2
     input_matrix: np.ndarray = np.random.rand(
@@ -23,7 +26,7 @@ def run_main_function(config: dict):
     )
 
     # Train
-    trained_grid = training_loop(
+    trained_grid, final_av_dist_to_bmu = training_loop(
         initial_radius,
         grid,
         input_matrix,
@@ -33,13 +36,27 @@ def run_main_function(config: dict):
         config["grid_height"],
     )
 
-    # Plot
-    timestamp = int(time.time())
-    filename_initial_grid = f"exp/plot_of_initial_grid_{timestamp}.png"
-    filename_trained_grid = f"exp/plot_of_trained_grid_{timestamp}.png"
+    # Plot results
+    now = datetime.now()
+    date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
+    filename_input = f"exp/plot_of_input_{date_time}.png"
+    filename_initial_grid = f"exp/plot_of_initial_grid_{date_time}.png"
+    filename_trained_grid = f"exp/plot_of_trained_grid_{date_time}.png"
+    fig_input = plot_pixel_inputs(input_matrix, filename_input)
     fig_initial_grid = plot_pixel_grid(grid, filename_initial_grid, config)
     fig_trained_grid = plot_pixel_grid(trained_grid, filename_trained_grid, config)
-    return fig_initial_grid, fig_trained_grid
+
+    # Log
+    elapsed_time = time.time() - start_time
+    log = {
+        "Datetime": now,
+        "Config": config,
+        "Elapsed time": elapsed_time,
+        "final_av_dist_to_bmu": final_av_dist_to_bmu,
+    }
+    log_message = create_log_message(log)
+    append_to_log_file(log_message, "logs\\log.txt")
+    return fig_input, fig_initial_grid, fig_trained_grid, log
 
 
 if __name__ == "__main__":
@@ -55,4 +72,5 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     config = load_and_check_config(args.config_file)
-    run_main_function(config)
+    __, __, __, log = run_main_function(config)
+    print(create_log_message(log))

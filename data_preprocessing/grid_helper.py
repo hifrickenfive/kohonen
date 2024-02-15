@@ -3,7 +3,7 @@ from typing import List, Dict, Tuple
 
 
 def initialise_grid(
-    grid_width: int, grid_height: int
+    grid_width: int, grid_height: int, dim: int
 ) -> Dict[Tuple[int, int], np.ndarray]:
     """
     Initialise the grid with random weight vectors
@@ -18,7 +18,7 @@ def initialise_grid(
     all_nodes = pairwise_permutations_grid(grid_width, grid_height)
     grid = dict()
     for node in all_nodes:
-        grid[node] = np.random.random((1, 3))
+        grid[node] = np.random.random((1, dim))
     return grid
 
 
