@@ -67,8 +67,8 @@ def check_config(config):
             },
             "dim_of_input_vector": {
                 "type": "integer",
-                "minimum": 1,
-                "maximum": 3,
+                "minimum": 3,
+                "maximum": 3,  # 3 dim required to produce pixel maps
             },
             "random_seed": {
                 "type": "integer",
