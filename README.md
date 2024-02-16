@@ -14,6 +14,7 @@ streamlit run streamlit.py
 
 # Usage (docker)
 docker run -p 8501:8501 kohonen-st-app
+Then go to localhost:8501 on your web browser
 
 ## Profiling
 To profile main.py run the below
