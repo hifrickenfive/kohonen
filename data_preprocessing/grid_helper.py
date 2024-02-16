@@ -45,27 +45,3 @@ def pairwise_permutations_grid(x: int, y: int) -> List[Tuple[int, int]]:
     pairwise_tuples = [tuple(pair) for pair in pairs]
 
     return pairwise_tuples
-
-
-def pairwise_permutations_square(radius: int) -> List[Tuple[int, int]]:
-    """
-    Create a list of tuples of all permutations of values in the range [-r, +r]
-    Args:
-        radius: the radius
-
-    Returns:
-        pairwise_tuples
-    """
-    # Create an array of values in the range [-r, +r]
-    values = np.arange(-radius, radius + 1)
-
-    # Create a meshgrid of all possible combinations of values
-    X, Y = np.meshgrid(values, values)
-
-    # Reshape the meshgrid to get pairs of values
-    pairs = np.vstack([X.flatten(), Y.flatten()]).T
-
-    # Convert pairs to tuples and return as a list
-    pairwise_tuples = [tuple(pair) for pair in pairs]
-
-    return pairwise_tuples

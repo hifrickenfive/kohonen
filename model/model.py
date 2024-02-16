@@ -1,5 +1,4 @@
 import numpy as np
-from data_preprocessing.grid_helper import pairwise_permutations_square
 from typing import List, Dict, Tuple
 
 
@@ -13,6 +12,7 @@ def find_bmu(
 
     Returns:
         bmu: coordinates of the BMU in the grid
+        dist_to_bmu: distance to the BMU
     """
     weight_vectors = np.array(
         list(grid.values())
@@ -39,7 +39,7 @@ def calc_neighbourhood_radius(
         current_iter: the current iteration
 
     Returns:
-        radius: the updated radius
+        updated_radius: the updated radius
     """
     updated_radius = current_radius * np.exp(-current_iter / max_iter)
     return updated_radius
@@ -62,7 +62,6 @@ def get_neighbourhood_nodes(
     """
     # Reduce search space to a square around the BMU
     radius_rounded = int(np.floor(radius))  # int faster than float ops
-    # delta_nodes = pairwise_permutations_square(radius_rounded)
     delta_x, delta_y = np.meshgrid(
         np.arange(-radius_rounded, radius_rounded + 1),
         np.arange(-radius_rounded, radius_rounded + 1),
@@ -73,12 +72,9 @@ def get_neighbourhood_nodes(
     delta_nodes = delta_nodes[
         ~np.all(delta_nodes == 0, axis=1)
     ]  # remove bmu (0,0) by scanning across the rows, i.e. along columns
-    # candidate_nodes = [tuple(np.array(bmu) + np.array(delta)) for delta in delta_nodes]
-    candidate_nodes = (
-        np.array(bmu) + delta_nodes
-    )  # broadcast is faster than list comprehension
+    candidate_nodes = np.array(bmu) + delta_nodes  # broadcast
 
-    # prune nodes beyond grid limits (x,y) where x is width, y is height
+    # Prune nodes beyond grid limits (x,y) where x is width, y is height
     valid_nodes = (
         (candidate_nodes[:, 0] >= 0)
         & (candidate_nodes[:, 0] < grid_width + 1)  # address 0 indexing
