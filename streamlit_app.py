@@ -3,90 +3,91 @@ from main import run_main_function
 import matplotlib.pyplot as plt
 
 
-def create_plt_placeholder():
-    fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
-    ax.set_facecolor("#f0f0f0")  # Set background color to neutral gray
-    ax.axis("off")  # Turn off axes
-    plt.xlim(0, 640)  # Set x-axis limits
-    plt.ylim(0, 480)  # Set y-axis limits
-    return fig
-
-
 def on_button_click():
-    # Update the state to indicate the button has been clicked
-    st.session_state.button_clicked = True
+    st.session_state.config = {
+        "grid_width": st.session_state.grid_width,
+        "grid_height": st.session_state.grid_height,
+        "max_iter": st.session_state.max_iter,
+        "learning_rate": st.session_state.learning_rate,
+        "num_input_vectors": st.session_state.num_input_vectors,
+        "dim_of_input_vector": 3,
+        "random_seed": st.session_state.random_seed,
+    }
+    st.session_state.run_id += 1
 
 
-st.subheader("Kohonen Map Training App")
+st.subheader("Kohonen Map Training App!")
 
-# Initialize or access the state variable
-if "button_clicked" not in st.session_state:
-    st.session_state.button_clicked = False  # Default state
+# Initialize session state
+if "run_id" not in st.session_state:
+    st.session_state.run_id = 0
 
+if "config" not in st.session_state:
+    st.session_state.config = dict()
 
-# Get user inputs
-st.sidebar.subheader("Enter parameters")
-grid_width = st.sidebar.slider("Grid Width", min_value=0, max_value=100, value=10)
-grid_height = st.sidebar.slider("Grid Height", min_value=0, max_value=100, value=10)
-num_input_vectors = st.sidebar.slider(
-    "Number of Input Vectors", min_value=1, max_value=20, value=20
+if "last_run_id" not in st.session_state:
+    st.session_state.last_run_id = -1  #
+
+# Inputs
+st.session_state.grid_width = st.sidebar.slider("Grid Width", 0, 100, 10)
+st.session_state.grid_height = st.sidebar.slider("Grid Height", 0, 100, 10)
+st.session_state.num_input_vectors = st.sidebar.slider(
+    "Number of Input Vectors", 1, 20, 20
 )
-max_iter = st.sidebar.slider("Max Iterations", min_value=0, max_value=1000, value=500)
-learning_rate = st.sidebar.slider(
-    "Learning Rate", min_value=0.0, max_value=1.0, value=0.1
-)
-random_seed = st.sidebar.slider("Random Seed", min_value=0, max_value=100, value=40)
+st.session_state.max_iter = st.sidebar.slider("Max Iterations", 0, 1000, 500)
+st.session_state.learning_rate = st.sidebar.slider("Learning Rate", 0.0, 1.0, 0.1)
+st.session_state.random_seed = st.sidebar.slider("Random Seed", 0, 100, 40)
 
 
+# Weclome and introduction
 text_container = st.container()
-long_text = "The Kohonen Self Organizing Map (SOM) provides a data visualization technique which helps \
-    to understand high dimensional data by reducing the dimensions of data to a map. SOM also represents \
-    clustering concept by grouping similar data together. Unlike other learning technique in neural networks,\
-    training a SOM requires no target vector. A SOM learns to classify the training data without any external supervision.\
-    \n\nIn this example, we are mapping a number of input vectors, each of dimension 3, onto a 2D grid."
-
+welcome_text = (
+    "This Kohonen Self Organizing Map (SOM) provides as visualisation technique to help "
+    "understand high dimensional data by reducing the dimensions of data to a map. SOM also represents "
+    "clustering concept by grouping similar data together. Unlike other learning techniques in neural networks, "
+    "training a SOM requires no target vector. A SOM learns to classify the training data without any external supervision. "
+    "In this example, we are mapping a number of input vectors, each of dimension 3, onto a 2D grid. Select the parameters in the sidebar and click submit."
+)
 with text_container:
     st.markdown(
-        f'<div style="white-space: pre-line;">{long_text}</div>',
-        unsafe_allow_html=True,  # allow user to modify the page
-    )
+        f'<div style="white-space: pre-line;">{welcome_text}</div>',
+        unsafe_allow_html=True,
+    )  # unsafe_allow_html is used to allow line breaks in the text
 
-# Create a button and attach the click event handler
-button = st.button("Submit", on_click=on_button_click)
-if st.session_state.button_clicked:
-    config = {
-        "grid_width": grid_width,
-        "grid_height": grid_height,
-        "max_iter": max_iter,
-        "learning_rate": learning_rate,
-        "num_input_vectors": num_input_vectors,
-        "dim_of_input_vector": 3,
-        "random_seed": random_seed,
-    }
+if st.button("Submit"):
+    on_button_click()
 
+if (
+    st.session_state.run_id != 0
+    and st.session_state.run_id > st.session_state.last_run_id
+):
     with st.spinner("Training..."):
-        fig_input, fig_initial_grid, fig_trained_grid, log = run_main_function(config)
+        (
+            st.session_state.fig_input,
+            st.session_state.fig_initial_grid,
+            st.session_state.fig_trained_grid,
+            st.session_state.log,
+        ) = run_main_function(st.session_state.config)
 
+    st.session_state.last_run_id = st.session_state.run_id
+
+if "fig_input" in st.session_state:
+    st.markdown("---")
     st.text("Input vector represented as pixels")
-    st.pyplot(fig_input)
-
-if st.session_state.button_clicked:
+    st.pyplot(st.session_state.fig_input)
     st.markdown("---")
 
 middle_col, right_col = st.columns(2)
-plt_placeholder = create_plt_placeholder()
 
 with middle_col:
-    if st.session_state.button_clicked:
+    if "fig_initial_grid" in st.session_state:
         st.text("Map Before: Randomly Initialised 2D-Grid")
-    plot_placeholder_before = st.empty()
+        st.pyplot(st.session_state.fig_initial_grid)
 
 with right_col:
-    if st.session_state.button_clicked:
+    if "fig_trained_grid" in st.session_state:
         st.text("Map After: After Training")
-    plot_placeholder_after = st.empty()
+        st.pyplot(st.session_state.fig_trained_grid)
 
-if st.session_state.button_clicked:
-    plot_placeholder_before.pyplot(fig_initial_grid)
-    plot_placeholder_after.pyplot(fig_trained_grid)
-    st.write(f"Elapsed time: {log['Elapsed time']:.3f} seconds")
+if "log" in st.session_state:
+    st.write(f"Elapsed time: {st.session_state.log['Elapsed time']:.3f} seconds")
