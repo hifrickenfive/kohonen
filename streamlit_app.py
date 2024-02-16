@@ -1,6 +1,5 @@
 import streamlit as st
 from main import run_main_function
-import matplotlib.pyplot as plt
 
 
 def on_button_click():

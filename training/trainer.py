@@ -1,4 +1,5 @@
 import numpy as np
+from tqdm import tqdm
 from typing import Dict, Tuple
 from model.model import (
     find_bmu,
@@ -77,9 +78,7 @@ def training_loop(
     )  # incur memory penalty to show before vs. after. Shallow ok
 
     all_av_dist_to_bmu = list()
-    for current_iter in range(max_iter):
-
-        # print(f"Training iteration {current_iter + 1}/{max_iter}")
+    for current_iter in tqdm(range(max_iter), "Training..."):
         all_dist_to_bmu = list()
         for input_vector in input_matrix:
             bmu, dist_to_bmu = find_bmu(trained_grid, input_vector)
