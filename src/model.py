@@ -1,8 +1,8 @@
 import numpy as np
-from typing import List, Dict, Tuple
+from typing import List
 
 
-def find_bmu_vectorised(input_vector: np.ndarray, grid: np.ndarray) -> List:
+def find_bmu_vectorised(input_vector: np.ndarray, grid: np.ndarray) -> list:
     """Find the best matching unit (BMU) in the grid for a given input vector
     Args:
         input_vector: the input vector
@@ -32,12 +32,13 @@ def find_bmu_vectorised(input_vector: np.ndarray, grid: np.ndarray) -> List:
     # Get indices of the minimum values
     # Shape is n_inputs x 4 (col 0: vectorIdx, col1: h, col2:w, col3: zeros)
     # Inspo https://stackoverflow.com/questions/30180241/numpy-get-the-column-and-row-index-of-the-minimum-value-of-a-2d-arra
+    # Caution: argwhere doesn't return unique indices if there are multiple min values
     _indices_of_min = np.argwhere(sum_squared_diff == min_sum_squared_diff)
 
     # Slice to get cols 1 and 2, which are height, width grid indices
-    indices_of_min = _indices_of_min[:, [1, 2]]
+    bmus = _indices_of_min[:, [1, 2]]
 
-    return indices_of_min, min_sum_squared_diff
+    return bmus, min_sum_squared_diff
 
 
 def get_neighbourhood_nodes(

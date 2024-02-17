@@ -2,7 +2,6 @@ import argparse
 from datetime import datetime
 import numpy as np
 import time
-from typing import Dict, Tuple
 from utils.config_utils import load_and_check_config
 from src.trainer import training_loop
 from utils.plot_utils import plot_pixel_grid, plot_pixel_inputs
@@ -10,6 +9,7 @@ from utils.log_utils import append_to_log_file, create_log_message
 
 
 def run_main_function(config: dict, input_matrix=None):
+    config = load_and_check_config("TC4_config.yaml")
     start_time = time.time()
 
     # Set random seed
