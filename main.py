@@ -9,18 +9,20 @@ from utils.plot_utils import plot_pixel_grid, plot_pixel_inputs
 from utils.log_utils import append_to_log_file, create_log_message
 
 
-def run_main_function(config: dict):
+def run_main_function(config: dict, input_matrix=None):
     start_time = time.time()
 
     # Set random seed
     np.random.seed(config["random_seed"])
 
+    # Set inputs
     grid = np.random.rand(
         config["grid_height"], config["grid_width"], config["dim_of_input_vector"]
     )
-    input_matrix = np.random.rand(
-        config["num_input_vectors"], config["dim_of_input_vector"]
-    )
+    if input_matrix is None:
+        input_matrix = np.random.rand(
+            config["num_input_vectors"], config["dim_of_input_vector"]
+        )
 
     # Train
     trained_grid, final_av_dist_to_bmu = training_loop(

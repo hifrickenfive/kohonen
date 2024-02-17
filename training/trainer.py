@@ -1,10 +1,10 @@
 import numpy as np
 from tqdm import tqdm
-from typing import Dict
 from model.model import (
     find_bmu_vectorised,
     get_neighbourhood_nodes,
     calc_influence,
+    calc_d_squared,
 )
 
 
@@ -55,7 +55,13 @@ def training_loop(
     initial_radius = radius
     time_constant = max_iter / np.log(initial_radius)
 
-    for current_iter in tqdm(range(max_iter), "Training..."):
+    # we enumerate through the training data for some number of iterations (repeating if necessary)...
+    # implies max iter is function of number of input vectors
+    # e.g. if max_iter = 100, and num_inputs = 20, then in a batch process we would have 5 iterations
+
+    adj_max_iter_for_batch = round(max_iter / input_matrix.shape[0])
+
+    for current_iter in tqdm(range(adj_max_iter_for_batch), "Training..."):
         bmus, min_sum_squared_diff = find_bmu_vectorised(input_matrix, trained_grid)
 
         radius = radius * np.exp(-current_iter / time_constant)
@@ -65,19 +71,14 @@ def training_loop(
             neighbourhood_nodes = get_neighbourhood_nodes(
                 bmu, radius, grid_width, grid_height
             )
-            d_squared = np.sum(
-                (neighbourhood_nodes - bmu.reshape((1, 2))) ** 2,
-                axis=-1,
-                keepdims=True,
-            )
+            d_squared = calc_d_squared(neighbourhood_nodes, bmu.reshape(1, 2))
             for idx_node, node in enumerate(neighbourhood_nodes):
-                node_height, node_width = node
-                influence = np.exp(-d_squared[idx_node] / (2 * radius**2))
+                node_height_idx, node_width_idx = node
+                influence = calc_influence(d_squared[idx_node], radius)
 
-                current_weight = trained_grid[node_height, node_width, :]
-                updated_weight = current_weight + lr * influence * (
-                    input_matrix[idx_input_vector, :] - current_weight
+                current_weight = trained_grid[node_height_idx, node_width_idx, :]
+                trained_grid[node_height_idx, node_width_idx, :] = update_node_weights(
+                    current_weight, lr, influence, input_matrix[idx_input_vector]
                 )
-                trained_grid[node_height, node_width, :] = updated_weight
 
     return trained_grid, np.sqrt(np.mean(min_sum_squared_diff))

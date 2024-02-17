@@ -1,5 +1,5 @@
-grid_width: 9  # zero-based indexing
-grid_height: 9  # zero-based indexing
+grid_width: 10
+grid_height: 10
 max_iter: 200
 learning_rate: 0.1
 num_input_vectors: 20

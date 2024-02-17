@@ -4,7 +4,7 @@ from typing import List, Dict, Tuple
 
 def find_bmu_vectorised(
     input_vector: np.ndarray, grid: Dict[Tuple[int, int], np.ndarray]
-) -> Tuple[int, int]:
+) -> List:
     """Find the best matching unit (BMU) in the grid for a given input vector
     Args:
         input_vector: the input vector
@@ -94,9 +94,11 @@ def get_neighbourhood_nodes(
     delta_nodes = np.column_stack(
         (delta_x.ravel(), delta_y.ravel())
     )  # flatten each 2d array and stack together to form 2 columns of x,y pairs
+
     delta_nodes = delta_nodes[
         ~np.all(delta_nodes == 0, axis=1)
     ]  # remove bmu (0,0) by scanning across the rows, i.e. along columns
+
     candidate_nodes = np.array(bmu) + delta_nodes  # broadcast
 
     # Prune nodes beyond grid limits (x,y) where x is height, y is width
@@ -115,18 +117,14 @@ def get_neighbourhood_nodes(
     return candidate_nodes[within_radius]
 
 
-def calc_influence(node: Tuple[int, int], bmu: Tuple[int, int], radius: float) -> float:
-    """
-    Calculate the influence of the BMU on a given node
+def calc_influence(d_squared, radius) -> float:
+    return np.exp(-d_squared / (2 * radius**2))
 
-    Args:
-        node: the coordinates of the node
-        bmu: the coordinates of the BMU
-        radius: the radius of the neighbourhood from the BMU
 
-    Returns:
-        influence: the influence of the BMU on the node
-    """
-    dist = np.linalg.norm(np.array(bmu) - np.array(node))
-    influence = np.exp(-(dist**2) / (2 * radius**2))
-    return influence
+def calc_d_squared(neighbourhood_nodes, bmu):
+    d_squared = np.sum(
+        (neighbourhood_nodes - bmu) ** 2,
+        axis=-1,
+        keepdims=True,
+    )
+    return d_squared
