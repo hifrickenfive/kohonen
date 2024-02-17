@@ -58,7 +58,7 @@ def check_config(config):
             "learning_rate": {
                 "type": "number",
                 "minimum": 0,
-                "maximum": 1,
+                "maximum": 0.99,
             },
             "num_input_vectors": {
                 "type": "integer",

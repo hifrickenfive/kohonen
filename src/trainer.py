@@ -6,7 +6,6 @@ from src.model import (
     calc_influence,
     calc_d_squared,
 )
-import matplotlib.pyplot as plt
 
 
 def training_loop(
@@ -35,7 +34,6 @@ def training_loop(
     trained_grid = grid.copy()
     radius = max(grid_width, grid_height) / 2
     initial_radius = radius
-    initial_lr = lr
     time_constant = max_iter / np.log(initial_radius)
     inner_loop_iter = 0
 
@@ -51,7 +49,7 @@ def training_loop(
         # Find BMUs in batch. Return BMUs as height, row indices (num_input vectors, 2)
         bmus, min_sum_squared_diff = find_bmu_vectorised(input_matrix, trained_grid)
 
-        # Update radius and learning rate with each input vector iteration not each batch iteration
+        # Update previous radius and learning rate with each each batch iteration
         radius = radius * np.exp(-inner_loop_iter / time_constant)
         lr = lr * np.exp(-inner_loop_iter / time_constant)
         inner_loop_iter += 1

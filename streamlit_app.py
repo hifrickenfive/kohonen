@@ -34,7 +34,7 @@ st.session_state.num_input_vectors = st.sidebar.slider(
     "Number of Input Vectors", 1, 20, 20
 )
 st.session_state.max_iter = st.sidebar.slider("Max Iterations", 0, 1000, 500)
-st.session_state.learning_rate = st.sidebar.slider("Learning Rate", 0.0, 1.0, 0.1)
+st.session_state.learning_rate = st.sidebar.slider("Learning Rate", 0.0, 0.99, 0.1)
 st.session_state.random_seed = st.sidebar.slider("Random Seed", 0, 100, 40)
 
 

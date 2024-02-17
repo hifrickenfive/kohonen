@@ -9,7 +9,6 @@ from utils.log_utils import append_to_log_file, create_log_message
 
 
 def run_main_function(config: dict, input_matrix=None):
-    config = load_and_check_config("TC4_config.yaml")
     start_time = time.time()
 
     # Set random seed
