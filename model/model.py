@@ -2,6 +2,49 @@ import numpy as np
 from typing import List, Dict, Tuple
 
 
+def find_bmu_vectorised(
+    input_vector: np.ndarray, grid: Dict[Tuple[int, int], np.ndarray]
+) -> Tuple[int, int]:
+    """Find the best matching unit (BMU) in the grid for a given input vector
+    Args:
+        input_vector: the input vector
+        grid: keys are the grid coordinates, values are weight vectors
+    Assumptions:
+        - the input vector has the same dimension as the weight vectors
+        - the grid is a 2D grid
+    Returns:
+        bmu: the coordinates of the BMUs in the grid
+        min_dist: the distance between the BMU and the input vectors
+    """
+    # Reshape input vector and grid for vectorised operations
+    n_inputs, input_dim = input_vector.shape[0], input_vector.shape[1]
+    grid_height, grid_width, grid_dim = grid.shape[0], grid.shape[1], grid.shape[2]
+
+    reshaped_input_vector = input_vector.reshape((n_inputs, 1, 1, input_dim))
+    tiled_vector = np.tile(reshaped_input_vector, (1, grid_height, grid_width, 1))
+
+    reshaped_grid = grid.reshape((1, grid_height, grid_width, grid_dim))
+    tiled_grid = np.tile(reshaped_grid, (n_inputs, 1, 1, 1))
+
+    # Find min along the colour channels i.e. the last axis
+    sum_squared_diff = np.sum(
+        (tiled_vector - tiled_grid) ** 2, axis=-1, keepdims=True
+    )  # n_inputs x width x height x 1
+    min_sum_squared_diff = np.min(
+        sum_squared_diff, axis=(1, 2), keepdims=True
+    )  # n_inputs x 1 x 1 x 1
+
+    # Get indices of the minimum values
+    _indices_of_min = np.argwhere(
+        sum_squared_diff == min_sum_squared_diff
+    )  # n_inputs x 4 (col 0: vectorIdx, col1: h, col2:w, col3: zeros). inspo https://stackoverflow.com/questions/30180241/numpy-get-the-column-and-row-index-of-the-minimum-value-of-a-2d-arra
+    indices_of_min = _indices_of_min[
+        :, [1, 2]
+    ]  # slice to get cols 1 and 2, which are height, width grid indices
+    bmu = [tuple(indices) for indices in indices_of_min]
+    return bmu, min_sum_squared_diff
+
+
 def find_bmu(
     grid: Dict[Tuple[int, int], np.ndarray], input_vector: np.ndarray
 ) -> Tuple[int, int]:
@@ -28,20 +71,22 @@ def find_bmu(
 
 
 def calc_neighbourhood_radius(
-    current_radius: float, max_iter: int, current_iter: int
+    initial_radius: float,
+    current_iter: int,
+    time_constant: float,
 ) -> float:
     """
     Calculate the neighbourhood radius at a given iteration
 
     Args:
-        current_radius: the current radius
-        max_iter: the maximum number of iterations
+        initial_radius: the initial radius
         current_iter: the current iteration
+        time_constant: the time constant
 
     Returns:
         updated_radius: the updated radius
     """
-    updated_radius = current_radius * np.exp(-current_iter / max_iter)
+    updated_radius = initial_radius * np.exp(-current_iter / time_constant)
     return updated_radius
 
 
@@ -74,21 +119,20 @@ def get_neighbourhood_nodes(
     ]  # remove bmu (0,0) by scanning across the rows, i.e. along columns
     candidate_nodes = np.array(bmu) + delta_nodes  # broadcast
 
-    # Prune nodes beyond grid limits (x,y) where x is width, y is height
+    # Prune nodes beyond grid limits (x,y) where x is height, y is width
     valid_nodes = (
         (candidate_nodes[:, 0] >= 0)
-        & (candidate_nodes[:, 0] < grid_width + 1)  # address 0 indexing
+        & (candidate_nodes[:, 0] < grid_height)
         & (candidate_nodes[:, 1] >= 0)
-        & (candidate_nodes[:, 1] < grid_height + 1)
+        & (candidate_nodes[:, 1] < grid_width)
     )
     candidate_nodes = candidate_nodes[valid_nodes]  # filter
 
     # Prune nodes outside the radius
     distances_sq = np.sum((candidate_nodes - np.array(bmu)) ** 2, axis=1)
     within_radius = distances_sq <= radius**2
-    neighbourhood_nodes = [tuple(node) for node in candidate_nodes[within_radius]]
 
-    return neighbourhood_nodes
+    return candidate_nodes[within_radius]
 
 
 def calc_influence(node: Tuple[int, int], bmu: Tuple[int, int], radius: float) -> float:

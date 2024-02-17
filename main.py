@@ -17,17 +17,19 @@ def run_main_function(config: dict):
     np.random.seed(config["random_seed"])
 
     # Set inputs
-    grid: Dict[Tuple[int, int], np.ndarray] = initialise_grid(
-        config["grid_width"], config["grid_height"], config["dim_of_input_vector"]
+    # grid: Dict[Tuple[int, int], np.ndarray] = initialise_grid(
+    #     config["grid_height"], config["grid_width"], config["dim_of_input_vector"]
+    # )  # images by convention are width x height but np arrays are rows x cols
+
+    grid: np.ndarray = np.random.rand(
+        config["grid_height"], config["grid_width"], config["dim_of_input_vector"]
     )
-    initial_radius: float = max(config["grid_width"], config["grid_height"]) / 2
     input_matrix: np.ndarray = np.random.rand(
         config["num_input_vectors"], config["dim_of_input_vector"]
     )
 
     # Train
     trained_grid, final_av_dist_to_bmu = training_loop(
-        initial_radius,
         grid,
         input_matrix,
         config["max_iter"],

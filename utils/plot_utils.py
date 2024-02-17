@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 from typing import Dict, Tuple
 
 
@@ -32,7 +33,7 @@ def plot_pixel_inputs(input_vector, input_filename):
 
 
 def plot_pixel_grid(
-    pixel_dict: Dict[Tuple[int, int], np.ndarray],
+    pixel_grid: np.ndarray,
     filename: str,
     config: dict,
     tick_step=2,
@@ -45,29 +46,14 @@ def plot_pixel_grid(
         pixel_dict: a dictionary of pixel positions and colours
         filename: the filename of the plot to be saved
     """
-    # Extract grid size
-    max_x = max(key[0] for key in pixel_dict.keys())
-    max_y = max(key[1] for key in pixel_dict.keys())
-    width = max_x + 1
-    height = max_y + 1
-
-    # Create an empty array to store pixel colors
-    pixel_grid = np.zeros((height, width, 3), dtype=np.uint8)
-
-    # Fill in pixel colors
-    for position, color in pixel_dict.items():
-        x, y = position
-        pixel_grid[y, x] = color * 255  # Set colour, y is rows, x is column convention
-
-    # Set ticks as integers
-    min_x = min(key[0] for key in pixel_dict.keys())
-    min_y = min(key[1] for key in pixel_dict.keys())
+    height, width = pixel_grid.shape[0], pixel_grid.shape[1]
 
     fig, ax = plt.subplots()
+    ax.set_xticks(np.arange(0, width + 1, tick_step))
+    ax.set_yticks(np.arange(0, height + 1, tick_step))
 
-    # Set the ticks using the axis object
-    ax.set_xticks(np.arange(min_x, max_x + 1, tick_step))
-    ax.set_yticks(np.arange(min_y, max_y + 1, tick_step))
+    ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=10, integer=True))
+    ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=10, integer=True))
 
     # Add annotation in bottom left corner of config values
     params_text = "\n".join(f"{key}: {value}" for key, value in config.items())
@@ -78,7 +64,6 @@ def plot_pixel_grid(
         transform=ax.transAxes,  # set position in axis coordinates i.e. (0,0) bottom left
         fontsize=8,
         verticalalignment="bottom",
-        # bbox=dict(facecolor="white", alpha=0.2),  # lower alpha = more transparency
     )
 
     ax.imshow(pixel_grid)
@@ -86,3 +71,7 @@ def plot_pixel_grid(
     plt.close(fig)  # Close the specific figure
 
     return fig
+
+
+def test_plot(pixel_grid):
+    plt.imshow(pixel_grid)

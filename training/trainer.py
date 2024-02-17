@@ -2,31 +2,26 @@ import numpy as np
 from tqdm import tqdm
 from typing import Dict, Tuple
 from model.model import (
-    find_bmu,
+    find_bmu_vectorised,
     calc_neighbourhood_radius,
     get_neighbourhood_nodes,
     calc_influence,
 )
 
 
-def update_lr(
-    current_iter: int, current_lr: int, current_radius: float, max_iter: int
-) -> float:
+def update_lr(current_iter: int, initial_lr: int, time_constant: float) -> float:
     """
     Update the learning rate at a given iteration
 
     Args:
         current_iter: the current iteration
-        current_lr: the current learning rate
-        current_radius: the current radius
-        max_iter: the maximum number of iterations
+        initial_lr: the initial learning rate
+        time_constant: the time constant
 
     Returns:
         updated_ lr: the updated learning rate
     """
-    eps = 1e-9  # prevent divide by zero error
-    time_constant = max_iter / np.log(current_radius + eps)
-    updated_lr = current_lr * np.exp(-current_iter / time_constant + eps)
+    updated_lr = initial_lr * np.exp(-current_iter / time_constant)
     return updated_lr
 
 
@@ -49,11 +44,10 @@ def update_node_weights(
 
 
 def training_loop(
-    radius: float,
     grid: Dict[Tuple[int, int], np.ndarray],
     input_matrix: np.ndarray,
     max_iter: int,
-    learning_rate: int,
+    initial_lr: int,
     grid_width: int,
     grid_height: int,
 ) -> Dict[Tuple[int, int], np.ndarray]:
@@ -73,28 +67,27 @@ def training_loop(
         The trained grid with the same structure as the input grid.
     """
     # Initialise
-    trained_grid = (
-        grid.copy()
-    )  # incur memory penalty to show before vs. after. Shallow ok
+    trained_grid = grid.copy()
+    radius = max(grid_width, grid_height) / 2
+    initial_radius = radius
+    time_constant = max_iter / np.log(initial_radius / 2)
 
-    all_av_dist_to_bmu = list()
     for current_iter in tqdm(range(max_iter), "Training..."):
-        all_dist_to_bmu = list()
-        for input_vector in input_matrix:
-            bmu, dist_to_bmu = find_bmu(trained_grid, input_vector)
-            all_dist_to_bmu.append(dist_to_bmu)
-            radius = calc_neighbourhood_radius(radius, max_iter, current_iter)
+        bmus, min_sum_squared_diff = find_bmu_vectorised(input_matrix, trained_grid)
+        radius = calc_neighbourhood_radius(radius, current_iter, time_constant)
+        lr = update_lr(current_iter, initial_lr, time_constant)
+
+        for idx_input_vector, bmu in enumerate(bmus):
             neighbourhood_nodes = get_neighbourhood_nodes(
                 bmu, radius, grid_width, grid_height
             )
-            lr = update_lr(current_iter, learning_rate, radius, max_iter)
-            for node in neighbourhood_nodes:
+            for idx_node, node in enumerate(neighbourhood_nodes):
+                node_height, node_width = node
                 influence = calc_influence(node, bmu, radius)
-                trained_grid[node] = update_node_weights(
-                    trained_grid[node], lr, influence, input_vector
+                trained_grid[node_height, node_width, :] = update_node_weights(
+                    trained_grid[node_height, node_width, :],
+                    lr,
+                    influence,
+                    input_matrix[idx_input_vector, :],
                 )
-        av_dist_to_bmu_iter = np.mean(all_dist_to_bmu)
-        all_av_dist_to_bmu.append(av_dist_to_bmu_iter)
-
-    final_av_dist_to_bmu = np.mean(all_dist_to_bmu)
-    return trained_grid, np.sqrt(final_av_dist_to_bmu)
+    return trained_grid, np.sqrt(np.mean(min_sum_squared_diff))
