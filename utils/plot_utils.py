@@ -4,27 +4,18 @@ import matplotlib.ticker as ticker
 from typing import Dict, Tuple
 
 
-def plot_pixel_inputs(input_vector, input_filename):
-    # Assuming input_vector is a (20, 3) array for 20 pixels with RGB values
-    num_pixels = input_vector.shape[0]  # 20 pixels
-    num_channels = input_vector.shape[1]  # 3 channels (RGB)
+def plot_pixel_inputs(input_vectors, input_filename):
+    num_pixels = input_vectors.shape[0]
+    num_channels = input_vectors.shape[1]
 
-    # Reshape input_vector to a (1, 20, 3) array for plotting
-    # This arranges the pixels in a single row with 20 columns
-    input_vector_reshaped = input_vector.reshape(1, num_pixels, num_channels)
+    # Reshape so matplotlib treats the input vector as pixel colours
+    input_vector_reshaped = input_vectors.reshape(1, num_pixels, num_channels)
 
-    # Create a figure with adjusted dimensions to ensure each pixel is displayed as a square
-    # The width of the figure is adjusted to ensure each of the 20 pixels can be displayed as a square
-    # A higher width-to-height ratio is used to accommodate all pixels horizontally
-    fig, ax = plt.subplots(
-        figsize=(20, 1)
-    )  # Adjusted figure size for horizontal layout
-    ax.imshow(
-        input_vector_reshaped, aspect="auto"
-    )  # 'auto' lets matplotlib adjust pixels to fill the space
+    fig, ax = plt.subplots(figsize=(num_pixels, 1))
+    ax.imshow(input_vector_reshaped, aspect="auto")
 
-    ax.set_xticks([])  # Remove x ticks
-    ax.set_yticks([])  # Remove y ticks
+    ax.set_xticks([])
+    ax.set_yticks([])
 
     plt.savefig(input_filename)
     plt.close(fig)

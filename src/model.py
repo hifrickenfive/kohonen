@@ -30,15 +30,22 @@ def find_bmu_vectorised(input_vector: np.ndarray, grid: np.ndarray) -> list:
     min_sum_squared_diff = np.min(sum_squared_diff, axis=(1, 2), keepdims=True)
 
     # Get indices of the minimum values
-    # Shape is n_inputs x 4 (col 0: vectorIdx, col1: h, col2:w, col3: zeros)
-    # Inspo https://stackoverflow.com/questions/30180241/numpy-get-the-column-and-row-index-of-the-minimum-value-of-a-2d-arra
-    # Caution: argwhere doesn't return unique indices if there are multiple min values
-    _indices_of_min = np.argwhere(sum_squared_diff == min_sum_squared_diff)
-
-    # Slice to get cols 1 and 2, which are height, width grid indices
-    bmus = _indices_of_min[:, [1, 2]]
-
+    # Previously used np.argwhere but there are corner cases where it doesn't return unique indices
+    bmus = find_unique_bmu_indices(sum_squared_diff)
     return bmus, min_sum_squared_diff
+
+
+def find_unique_bmu_indices(sum_squared_diff: np.ndarray) -> np.ndarray:
+    unique_indices = []
+    for i in range(sum_squared_diff.shape[0]):
+        flat_diff = sum_squared_diff[i].flatten()
+        min_index = np.argmin(flat_diff)  # returns first occurence only
+
+        # Convert this flat index back to the original indices
+        unique_index = np.unravel_index(min_index, sum_squared_diff[i].shape)
+        unique_indices.append(unique_index[:-1])
+
+    return np.array(unique_indices)
 
 
 def get_neighbourhood_nodes(

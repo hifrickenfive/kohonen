@@ -34,7 +34,7 @@ st.session_state.num_input_vectors = st.sidebar.slider(
     "Number of Input Vectors", 1, 20, 20
 )
 st.session_state.max_iter = st.sidebar.slider("Max Iterations", 0, 1000, 500)
-st.session_state.learning_rate = st.sidebar.slider("Learning Rate", 0.0, 0.99, 0.1)
+st.session_state.learning_rate = st.sidebar.slider("Learning Rate", 0.0, 1.0, 0.1)
 st.session_state.random_seed = st.sidebar.slider("Random Seed", 0, 100, 40)
 
 
@@ -42,10 +42,9 @@ st.session_state.random_seed = st.sidebar.slider("Random Seed", 0, 100, 40)
 text_container = st.container()
 welcome_text = (
     "This Kohonen Self Organizing Map (SOM) provides as visualisation technique to help "
-    "understand high dimensional data by reducing the dimensions of data to a map. SOM also represents "
-    "clustering concept by grouping similar data together. Unlike other learning techniques in neural networks, "
-    "training a SOM requires no target vector. A SOM learns to classify the training data without any external supervision. "
-    "In this example, we are mapping a number of input vectors, each of dimension 3, onto a 2D grid. Select the parameters in the sidebar and click submit."
+    "understand high dimensional data by reducing the dimensions of data to a map. "
+    "It is an unsupervised learning technique. "
+    "In this example, we are mapping a number of input vectors, each with dimension 3, onto a 2D grid. Select the parameters in the sidebar and click submit."
 )
 with text_container:
     st.markdown(
@@ -71,10 +70,10 @@ if (
     st.session_state.last_run_id = st.session_state.run_id
 
 if "fig_input" in st.session_state:
-    st.markdown("---")
+    # st.markdown("---")
     st.text("Input vector represented as pixels")
     st.pyplot(st.session_state.fig_input)
-    st.markdown("---")
+    # st.markdown("---")
 
 middle_col, right_col = st.columns(2)
 
