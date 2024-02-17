@@ -5,7 +5,6 @@ __pycache__/
 *scratch*
 *pstats*
 *log.txt*
-exp/*
 test.ipynb
 test_config.yaml
 *.vscode
