@@ -9,6 +9,7 @@ exp/*
 test.ipynb
 test_config.yaml
 *.vscode
+*debug*
 
 # C extensions
 *.so

@@ -2,9 +2,7 @@ import numpy as np
 from typing import List, Dict, Tuple
 
 
-def find_bmu_vectorised(
-    input_vector: np.ndarray, grid: Dict[Tuple[int, int], np.ndarray]
-) -> List:
+def find_bmu_vectorised(input_vector: np.ndarray, grid: np.ndarray) -> List:
     """Find the best matching unit (BMU) in the grid for a given input vector
     Args:
         input_vector: the input vector
@@ -27,47 +25,19 @@ def find_bmu_vectorised(
     tiled_grid = np.tile(reshaped_grid, (n_inputs, 1, 1, 1))
 
     # Find min along the colour channels i.e. the last axis
-    sum_squared_diff = np.sum(
-        (tiled_vector - tiled_grid) ** 2, axis=-1, keepdims=True
-    )  # n_inputs x width x height x 1
-    min_sum_squared_diff = np.min(
-        sum_squared_diff, axis=(1, 2), keepdims=True
-    )  # n_inputs x 1 x 1 x 1
+    # sum_squared_diff shape is n_inputs x height x width x 1
+    sum_squared_diff = np.sum((tiled_vector - tiled_grid) ** 2, axis=-1, keepdims=True)
+    min_sum_squared_diff = np.min(sum_squared_diff, axis=(1, 2), keepdims=True)
 
     # Get indices of the minimum values
-    _indices_of_min = np.argwhere(
-        sum_squared_diff == min_sum_squared_diff
-    )  # n_inputs x 4 (col 0: vectorIdx, col1: h, col2:w, col3: zeros). inspo https://stackoverflow.com/questions/30180241/numpy-get-the-column-and-row-index-of-the-minimum-value-of-a-2d-arra
-    indices_of_min = _indices_of_min[
-        :, [1, 2]
-    ]  # slice to get cols 1 and 2, which are height, width grid indices
-    # bmu = [tuple(indices) for indices in indices_of_min]
+    # Shape is n_inputs x 4 (col 0: vectorIdx, col1: h, col2:w, col3: zeros)
+    # Inspo https://stackoverflow.com/questions/30180241/numpy-get-the-column-and-row-index-of-the-minimum-value-of-a-2d-arra
+    _indices_of_min = np.argwhere(sum_squared_diff == min_sum_squared_diff)
+
+    # Slice to get cols 1 and 2, which are height, width grid indices
+    indices_of_min = _indices_of_min[:, [1, 2]]
+
     return indices_of_min, min_sum_squared_diff
-
-
-def find_bmu(
-    grid: Dict[Tuple[int, int], np.ndarray], input_vector: np.ndarray
-) -> Tuple[int, int]:
-    """Find the best matching unit (BMU) in the grid for a given input vector
-    Args:
-        grid: keys are the grid coordinates, values are weight vectors
-        input_vector: the input vector
-
-    Returns:
-        bmu: coordinates of the BMU in the grid
-        dist_to_bmu: distance to the BMU
-    """
-    weight_vectors = np.array(
-        list(grid.values())
-    )  # convert to np so we can use broadcasting but n, 1, dim
-    weight_vectors = np.squeeze(weight_vectors)  # n, dim
-    distances_squared = np.sum(
-        (weight_vectors - input_vector) ** 2, axis=1
-    )  # axis=1 along each row
-    min_index = np.argmin(distances_squared)
-    dist_to_bmu = distances_squared[min_index]
-    bmu = list(grid.keys())[min_index]
-    return bmu, dist_to_bmu
 
 
 def get_neighbourhood_nodes(
@@ -87,19 +57,20 @@ def get_neighbourhood_nodes(
     """
     # Reduce search space to a square around the BMU
     radius_rounded = int(np.floor(radius))  # int faster than float ops
+
+    # Create 2D array of x and y deltas
     delta_x, delta_y = np.meshgrid(
         np.arange(-radius_rounded, radius_rounded + 1),
         np.arange(-radius_rounded, radius_rounded + 1),
-    )  # 2d array of x and y deltas
-    delta_nodes = np.column_stack(
-        (delta_x.ravel(), delta_y.ravel())
-    )  # flatten each 2d array and stack together to form 2 columns of x,y pairs
+    )
 
-    delta_nodes = delta_nodes[
-        ~np.all(delta_nodes == 0, axis=1)
-    ]  # remove bmu (0,0) by scanning across the rows, i.e. along columns
+    # Flatten each 2d array and stack together to form 2 columns of x,y pairs
+    delta_nodes = np.column_stack((delta_x.ravel(), delta_y.ravel()))
 
-    candidate_nodes = np.array(bmu) + delta_nodes  # broadcast
+    # Remove bmu (0,0) by scanning across the rows, i.e. along columns
+    delta_nodes = delta_nodes[~np.all(delta_nodes == 0, axis=1)]
+
+    candidate_nodes = np.array(bmu) + delta_nodes
 
     # Prune nodes beyond grid limits (x,y) where x is height, y is width
     valid_nodes = (
@@ -108,20 +79,36 @@ def get_neighbourhood_nodes(
         & (candidate_nodes[:, 1] >= 0)
         & (candidate_nodes[:, 1] < grid_width)
     )
-    candidate_nodes = candidate_nodes[valid_nodes]  # filter
-
-    # Prune nodes outside the radius
-    distances_sq = np.sum((candidate_nodes - np.array(bmu)) ** 2, axis=1)
+    pruned_nodes = candidate_nodes[valid_nodes]
+    distances_sq = np.sum((pruned_nodes - np.array(bmu)) ** 2, axis=1)
     within_radius = distances_sq <= radius**2
 
-    return candidate_nodes[within_radius]
+    return pruned_nodes[within_radius]
 
 
 def calc_influence(d_squared, radius) -> float:
+    """Calculate the influence of a node based on its distance from the BMU
+
+    Args:
+        d_squared: euclidean distance squared
+        radius: radius of the neighbourhood
+
+    Returns:
+        influence: the influence of the node
+    """
     return np.exp(-d_squared / (2 * radius**2))
 
 
 def calc_d_squared(neighbourhood_nodes, bmu):
+    """Calculate the squared euclidean distance between the BMU and the neighbourhood nodes
+
+    Args:
+        neighbourhood_nodes: the nodes in the neighbourhood of the BMU
+        bmu: the best matching unit
+
+    Returns:
+        d_squared: the squared euclidean distance between the BMU and the neighbourhood nodes
+    """
     d_squared = np.sum(
         (neighbourhood_nodes - bmu) ** 2,
         axis=-1,

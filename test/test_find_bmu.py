@@ -1,5 +1,5 @@
 import numpy as np
-from model.model import find_bmu_vectorised
+from src.model import find_bmu_vectorised
 
 
 def test_3x2():

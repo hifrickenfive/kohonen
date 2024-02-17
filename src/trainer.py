@@ -1,6 +1,6 @@
 import numpy as np
 from tqdm import tqdm
-from model.model import (
+from src.model import (
     find_bmu_vectorised,
     get_neighbourhood_nodes,
     calc_influence,
@@ -33,13 +33,12 @@ def training_loop(
     # Initialise
     trained_grid = grid.copy()
     radius = max(grid_width, grid_height) / 2
-    initial_lr = lr
     initial_radius = radius
     time_constant = max_iter / np.log(initial_radius)
     inner_loop_iter = 0
 
-    # we enumerate through the training data for some number of iterations (repeating if necessary)...
-    # implies max iter is function of number of input vectors
+    # "We enumerate through the training data for some number of iterations (repeating if necessary)..."
+    # Implies max iter is function of number of input vectors
     # e.g. if max_iter = 100, and num_inputs = 20, then in a batch process we would have 5 iterations
 
     adj_max_iter_for_batch = round(max_iter / input_matrix.shape[0])
@@ -60,11 +59,14 @@ def training_loop(
             d_squared = calc_d_squared(neighbourhood_nodes, bmu)  # (num nodes, 1)
             influence = calc_influence(d_squared, radius)  # (num nodes, 1)
 
-            # Update node weights in batch
-            x_indices, y_indices = neighbourhood_nodes[:, 0], neighbourhood_nodes[:, 1]
-            node_weights = trained_grid[x_indices, y_indices, :]  # (num nodes, dim)
-            trained_grid[x_indices, y_indices, :] = node_weights + lr * influence * (
-                input_matrix[idx_input_vector] - node_weights
-            )  # (num nodes, dim) + scalar* (num nodes, 1)* ((dim, ) - (num nodes, dim))
+            # Get variables for updating node weights
+            x_idx, y_idx = neighbourhood_nodes[:, 0], neighbourhood_nodes[:, 1]
+            node_weights = trained_grid[x_idx, y_idx, :]  # (num nodes, dim)
+            current_vector = input_matrix[idx_input_vector]  # (dim,)
+
+            # Update node weights in the batch of neighbourhood nodes
+            trained_grid[x_idx, y_idx, :] = node_weights + lr * influence * (
+                current_vector - node_weights
+            )
 
     return trained_grid, np.sqrt(np.mean(min_sum_squared_diff))

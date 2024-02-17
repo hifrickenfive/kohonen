@@ -1,5 +1,5 @@
 import numpy as np
-from model.model import get_neighbourhood_nodes
+from src.model import get_neighbourhood_nodes
 
 
 def test_central_bmu_small_radius():

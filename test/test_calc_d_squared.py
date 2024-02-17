@@ -1,5 +1,5 @@
 import numpy as np
-from model.model import get_neighbourhood_nodes, calc_d_squared
+from src.model import get_neighbourhood_nodes, calc_d_squared
 
 
 def test_radius1():

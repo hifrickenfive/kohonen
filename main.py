@@ -3,8 +3,8 @@ from datetime import datetime
 import numpy as np
 import time
 from typing import Dict, Tuple
-from config.config_helper import load_and_check_config
-from training.trainer import training_loop
+from utils.config_utils import load_and_check_config
+from src.trainer import training_loop
 from utils.plot_utils import plot_pixel_grid, plot_pixel_inputs
 from utils.log_utils import append_to_log_file, create_log_message
 
