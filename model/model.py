@@ -41,8 +41,8 @@ def find_bmu_vectorised(
     indices_of_min = _indices_of_min[
         :, [1, 2]
     ]  # slice to get cols 1 and 2, which are height, width grid indices
-    bmu = [tuple(indices) for indices in indices_of_min]
-    return bmu, min_sum_squared_diff
+    # bmu = [tuple(indices) for indices in indices_of_min]
+    return indices_of_min, min_sum_squared_diff
 
 
 def find_bmu(
@@ -70,29 +70,9 @@ def find_bmu(
     return bmu, dist_to_bmu
 
 
-def calc_neighbourhood_radius(
-    initial_radius: float,
-    current_iter: int,
-    time_constant: float,
-) -> float:
-    """
-    Calculate the neighbourhood radius at a given iteration
-
-    Args:
-        initial_radius: the initial radius
-        current_iter: the current iteration
-        time_constant: the time constant
-
-    Returns:
-        updated_radius: the updated radius
-    """
-    updated_radius = initial_radius * np.exp(-current_iter / time_constant)
-    return updated_radius
-
-
 def get_neighbourhood_nodes(
-    bmu: Tuple[int, int], radius: float, grid_width: int, grid_height: int
-) -> List[Tuple[int, int]]:
+    bmu: np.ndarray, radius: float, grid_width: int, grid_height: int
+) -> List[np.ndarray]:
     """
     Get the nodes in the neighbourhood of the BMU given a radius
 

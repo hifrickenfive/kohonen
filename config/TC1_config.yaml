@@ -1,0 +1,7 @@
+grid_width: 9  # zero-based indexing
+grid_height: 9  # zero-based indexing
+max_iter: 100
+learning_rate: 0.1
+num_input_vectors: 20
+dim_of_input_vector: 3
+random_seed: 40

@@ -4,7 +4,6 @@ import numpy as np
 import time
 from typing import Dict, Tuple
 from config.config_helper import load_and_check_config
-from data_preprocessing.grid_helper import initialise_grid
 from training.trainer import training_loop
 from utils.plot_utils import plot_pixel_grid, plot_pixel_inputs
 from utils.log_utils import append_to_log_file, create_log_message
@@ -16,15 +15,10 @@ def run_main_function(config: dict):
     # Set random seed
     np.random.seed(config["random_seed"])
 
-    # Set inputs
-    # grid: Dict[Tuple[int, int], np.ndarray] = initialise_grid(
-    #     config["grid_height"], config["grid_width"], config["dim_of_input_vector"]
-    # )  # images by convention are width x height but np arrays are rows x cols
-
-    grid: np.ndarray = np.random.rand(
+    grid = np.random.rand(
         config["grid_height"], config["grid_width"], config["dim_of_input_vector"]
     )
-    input_matrix: np.ndarray = np.random.rand(
+    input_matrix = np.random.rand(
         config["num_input_vectors"], config["dim_of_input_vector"]
     )
 
