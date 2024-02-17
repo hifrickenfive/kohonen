@@ -41,7 +41,7 @@ st.session_state.random_seed = st.sidebar.slider("Random Seed", 0, 100, 40)
 # Weclome and introduction
 text_container = st.container()
 welcome_text = (
-    "This Kohonen Self Organizing Map (SOM) provides as visualisation technique to help "
+    "This Kohonen Self Organizing Map (SOM) provides a visualisation technique to help "
     "understand high dimensional data by reducing the dimensions of data to a map. "
     "It is an unsupervised learning technique. "
     "In this example, we are mapping a number of input vectors, each with dimension 3, onto a 2D grid. Select the parameters in the sidebar and click submit."
