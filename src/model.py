@@ -2,7 +2,7 @@ import numpy as np
 from typing import List
 
 
-def find_bmu_vectorised(input_vector: np.ndarray, grid: np.ndarray) -> list:
+def find_bmu_vectorised(input_vector: np.ndarray, grid: np.ndarray) -> List:
     """Find the best matching unit (BMU) in the grid for a given input vector
     Args:
         input_vector: the input vector

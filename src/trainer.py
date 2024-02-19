@@ -7,6 +7,8 @@ from src.model import (
     calc_d_squared,
 )
 
+import matplotlib.pyplot as plt
+
 
 def training_loop(
     grid: np.ndarray,
@@ -34,6 +36,7 @@ def training_loop(
     trained_grid = grid.copy()
     radius = max(grid_width, grid_height) / 2
     initial_radius = radius
+    initial_lr = lr
     time_constant = max_iter / np.log(initial_radius)
     inner_loop_iter = 0
 
@@ -45,32 +48,64 @@ def training_loop(
 
     lr_debug = []
     radius_debug = []
-    for batch_iter in tqdm(range(adj_max_iter_for_batch), "Training..."):
+    inner_lr_debug = []
+    inner_radius_debug = []
+    for iter in tqdm(range(max_iter), "Training..."):
         # Find BMUs in batch. Return BMUs as height, row indices (num_input vectors, 2)
-        bmus, min_sum_squared_diff = find_bmu_vectorised(input_matrix, trained_grid)
+        vector_idx = iter % input_matrix.shape[0]
+        current_vector = input_matrix[vector_idx]
+
+        diff = np.abs(grid - current_vector)
+        manhattan_dist = np.sum(diff, axis=2)  # (grid_height, grid_width)
+        bmu_idx = np.argmin(manhattan_dist)  # (1,) pos in flat array
+        bmu = np.unravel_index(bmu_idx, manhattan_dist.shape)  # (height idx, width idx)
 
         # Update previous radius and learning rate with each each batch iteration
-        radius = radius * np.exp(-inner_loop_iter / time_constant)
-        lr = lr * np.exp(-inner_loop_iter / time_constant)
-        inner_loop_iter += 1
-        lr_debug.append(lr)
-        radius_debug.append(radius)
+        # radius = initial_radius * np.exp(-inner_loop_iter / time_constant)
+        # lr = initial_lr * np.exp(-inner_loop_iter / time_constant)
+        # inner_loop_iter += 1
+        # lr_debug.append(lr)
+        # radius_debug.append(radius)
 
-        for idx_input_vector, bmu in enumerate(bmus):
-            neighbourhood_nodes = get_neighbourhood_nodes(
-                bmu, radius, grid_width, grid_height
-            )
-            d_squared = calc_d_squared(neighbourhood_nodes, bmu)  # (num nodes, 1)
-            influence = calc_influence(d_squared, radius)  # (num nodes, 1)
+        radius = initial_radius * np.exp(-iter / time_constant)
+        lr = initial_lr * np.exp(-iter / time_constant)
+        # inner_lr_debug.append(lr)
+        # inner_radius_debug.append(radius)
+        # inner_loop_iter += 1
 
-            # Get variables for updating node weights
-            x_idx, y_idx = neighbourhood_nodes[:, 0], neighbourhood_nodes[:, 1]
-            node_weights = trained_grid[x_idx, y_idx, :]  # (num nodes, dim)
-            current_vector = input_matrix[idx_input_vector]  # (dim,)
+        neighbourhood_nodes = get_neighbourhood_nodes(
+            bmu, radius, grid_width, grid_height
+        )
+        d_squared = calc_d_squared(neighbourhood_nodes, bmu)  # (num nodes, 1)
+        influence = calc_influence(d_squared, radius)  # (num nodes, 1)
 
-            # Update node weights in the batch of neighbourhood nodes
-            trained_grid[x_idx, y_idx, :] = node_weights + lr * influence * (
-                current_vector - node_weights
-            )
+        # Get variables for updating node weights
+        x_idx, y_idx = neighbourhood_nodes[:, 0], neighbourhood_nodes[:, 1]
+        node_weights = trained_grid[x_idx, y_idx, :]  # (num nodes, dim)
 
-    return trained_grid, np.sqrt(np.mean(min_sum_squared_diff))
+        # Update node weights in the batch of neighbourhood nodes
+        # (num_nodes, dim) + scalar + (num_nodes, 1) * ((3,) - (num_nodes, dim))
+        # (num_nodes, dim) + scalar + (num_nodes, 1) * (num_nodes, dim)
+        # (num_nodes, dim) + (num_nodes, dim)
+        # (num_nodes, dim)
+        trained_grid[x_idx, y_idx, :] = node_weights + lr * influence * (
+            current_vector - node_weights
+        )
+
+    # fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(10, 10))
+    # ax[0, 0].plot(lr_debug, "o-", color="red")
+    # ax[0, 0].set_title("lr: batch")
+
+    # ax[0, 1].plot(inner_lr_debug, "o-", color="darkred")
+    # ax[0, 1].set_title("lr: inner loop")
+
+    # ax[1, 0].plot(radius_debug, "o-", color="blue")
+    # ax[1, 0].set_title("radius: batch")
+
+    # ax[1, 1].plot(inner_radius_debug, "o-", color="darkblue")
+    # ax[1, 1].set_title("radius: inner loop")
+
+    # plt.savefig("debug\\initial_r_lr.png")
+    # plt.close()
+
+    return trained_grid, np.mean(manhattan_dist)
