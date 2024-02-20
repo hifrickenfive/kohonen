@@ -10,8 +10,11 @@ test_config.yaml
 *.vscode
 *debug*
 test_config.yaml
+diary.md
 *exp/*
 *analysis/*
+
+
 # C extensions
 *.so
 
