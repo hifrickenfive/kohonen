@@ -13,6 +13,7 @@ test_config.yaml
 diary.md
 *exp/*
 *analysis/*
+logs/pytest-logs.txt
 
 
 # C extensions
