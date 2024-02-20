@@ -11,8 +11,10 @@ test_config.yaml
 *debug*
 test_config.yaml
 *exp/*
+*analysis/*
 # C extensions
 *.so
+
 
 # Distribution / packaging
 .Python

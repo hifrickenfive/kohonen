@@ -2,50 +2,49 @@ import numpy as np
 from typing import List
 
 
-def find_bmu_vectorised(input_vector: np.ndarray, grid: np.ndarray) -> list:
-    """Find the best matching unit (BMU) in the grid for a given input vector
-    Args:
-        input_vector: the input vector
-        grid: keys are the grid coordinates, values are weight vectors
-    Assumptions:
-        - the input vector has the same dimension as the weight vectors
-        - the grid is a 2D grid
-    Returns:
-        bmu: the coordinates of the BMUs in the grid
-        min_dist: the distance between the BMU and the input vectors
+def update_weights(
+    node_weights: np.ndarray,
+    bmu_weights: np.ndarray,
+    lr: float,
+    radius: float,
+    current_vector_weights: np.ndarray,
+) -> np.ndarray:
     """
-    # Reshape input vector and grid for vectorised operations
-    n_inputs, input_dim = input_vector.shape[0], input_vector.shape[1]
-    grid_height, grid_width, grid_dim = grid.shape[0], grid.shape[1], grid.shape[2]
+    Update the weights of the nodes in the neighbourhood of the BMU
 
-    reshaped_input_vector = input_vector.reshape((n_inputs, 1, 1, input_dim))
-    tiled_vector = np.tile(reshaped_input_vector, (1, grid_height, grid_width, 1))
+    Args:
+        node_weights: the weights of the nodes in the neighbourhood of the BMU
+        bmu_weight: the weight of the BMU
+        lr: learning rate
+        radius: the radius of the neighbourhood
+        current_vector: current input vector
 
-    reshaped_grid = grid.reshape((1, grid_height, grid_width, grid_dim))
-    tiled_grid = np.tile(reshaped_grid, (n_inputs, 1, 1, 1))
-
-    # Find min along the colour channels i.e. the last axis
-    # sum_squared_diff shape is n_inputs x height x width x 1
-    sum_squared_diff = np.sum((tiled_vector - tiled_grid) ** 2, axis=-1, keepdims=True)
-    min_sum_squared_diff = np.min(sum_squared_diff, axis=(1, 2), keepdims=True)
-
-    # Get indices of the minimum values
-    # Previously used np.argwhere but there are corner cases where it doesn't return unique indices
-    bmus = find_unique_bmu_indices(sum_squared_diff)
-    return bmus, min_sum_squared_diff
+    Returns:
+        updated_node_weights: the updated weights of the nodes in the neighbourhood of the BMU
+    """
+    # Find spatial distance between between nodes position and bmu position
+    d_squared = calc_d_squared(node_weights, bmu_weights)
+    influence = calc_influence(d_squared, radius)  # (num nodes, 1)
+    updated_weights = node_weights + lr * influence * (
+        current_vector_weights - node_weights
+    )
+    return updated_weights
 
 
-def find_unique_bmu_indices(sum_squared_diff: np.ndarray) -> np.ndarray:
-    unique_indices = []
-    for i in range(sum_squared_diff.shape[0]):
-        flat_diff = sum_squared_diff[i].flatten()
-        min_index = np.argmin(flat_diff)  # returns first occurence only
+def find_bmu_simple(current_vector: np.ndarray, grid: np.ndarray) -> tuple:
+    """Find BMU based on pixel distance
 
-        # Convert this flat index back to the original indices
-        unique_index = np.unravel_index(min_index, sum_squared_diff[i].shape)
-        unique_indices.append(unique_index[:-1])
+    Args:
+        current_vector: current input vector.
+        grid: pixel grid.
 
-    return np.array(unique_indices)
+    Returns:
+        bmu: the best matching unit.
+    """
+    d_squared = np.sum((grid - current_vector) ** 2, axis=2)  # sum in pixel dim
+    _bmu_idx = np.argmin(d_squared)  # returns idx in flat array convention, row mjr
+    bmu = np.unravel_index(_bmu_idx, d_squared.shape)  # tuple
+    return bmu, d_squared[bmu]
 
 
 def get_neighbourhood_nodes(
@@ -55,37 +54,41 @@ def get_neighbourhood_nodes(
     Get the nodes in the neighbourhood of the BMU given a radius
 
     Args:
-        bmu: coordinates of the BMU
-        radius: the radius of the neighbourhood
-        grid_width: the width of the grid
-        grid_height: the height of the grid
+        bmu: coordinates of the BMU.
+        radius: the radius of the neighbourhood.
+        grid_width: the width of the grid.
+        grid_height: the height of the grid.
 
     Returns:
         neighbourhood_nodes: list of nodes in the neighbourhood of the BMU
     """
-    # Reduce search space to a square around the BMU
+    # Get all nodes within a square of side length 2*radius then prune nodes outside radius
     radius_rounded = int(np.floor(radius))  # int faster than float ops
 
-    # Create 2D array of x and y deltas
+    # 1. Create 2D array of x and y deltas in that square
+    # delta_x = [[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]]
+    # delta_y = [[-1, -1, -1], [-0, 0, 0], [1, 1, 1]]
     delta_x, delta_y = np.meshgrid(
         np.arange(-radius_rounded, radius_rounded + 1),
         np.arange(-radius_rounded, radius_rounded + 1),
     )
 
-    # Flatten each 2d array and stack together to form 2 columns of x,y pairs
+    # 2. Flatten each 2d array with .ravel() and stack together to form 2 columns of x,y pairs
+    # x -> [-1, 0, 1, -1, 0, 1, -1, 0, 1]
+    # y -> [-1, -1, -1, 0, 0, 0, 1, 1, 1]
     delta_nodes = np.column_stack((delta_x.ravel(), delta_y.ravel()))
 
-    # Remove bmu (0,0) by scanning across the rows, i.e. along columns
+    # 3. Remove bmu (0,0) by scanning across the rows, i.e. along columns
     delta_nodes = delta_nodes[~np.all(delta_nodes == 0, axis=1)]
 
     candidate_nodes = np.array(bmu) + delta_nodes
 
-    # Prune nodes beyond grid limits (x,y) where x is height, y is width
+    # 4. Prune nodes beyond grid limits (x,y) where x is height, y is width
     valid_nodes = (
         (candidate_nodes[:, 0] >= 0)
-        & (candidate_nodes[:, 0] < grid_height)
+        & (candidate_nodes[:, 0] < grid_height)  # check column 0 i.e. (height)
         & (candidate_nodes[:, 1] >= 0)
-        & (candidate_nodes[:, 1] < grid_width)
+        & (candidate_nodes[:, 1] < grid_width)  # check column 1 i.e. y (width)
     )
     pruned_nodes = candidate_nodes[valid_nodes]
     distances_sq = np.sum((pruned_nodes - np.array(bmu)) ** 2, axis=1)
@@ -94,7 +97,7 @@ def get_neighbourhood_nodes(
     return pruned_nodes[within_radius]
 
 
-def calc_influence(d_squared, radius) -> float:
+def calc_influence(d_squared: float, radius: float) -> float:
     """Calculate the influence of a node based on its distance from the BMU
 
     Args:
@@ -104,10 +107,12 @@ def calc_influence(d_squared, radius) -> float:
     Returns:
         influence: the influence of the node
     """
-    return np.exp(-d_squared / (2 * radius**2))
+
+    factor = 1  # big number = faster decay
+    return np.exp(-factor * d_squared / (2 * radius**2))
 
 
-def calc_d_squared(neighbourhood_nodes, bmu):
+def calc_d_squared(neighbourhood_nodes: np.ndarray, bmu: tuple):
     """Calculate the squared euclidean distance between the BMU and the neighbourhood nodes
 
     Args:

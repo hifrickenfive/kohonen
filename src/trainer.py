@@ -1,10 +1,9 @@
 import numpy as np
 from tqdm import tqdm
 from src.model import (
-    find_bmu_vectorised,
+    find_bmu_simple,
+    update_weights,
     get_neighbourhood_nodes,
-    calc_influence,
-    calc_d_squared,
 )
 
 
@@ -12,7 +11,7 @@ def training_loop(
     grid: np.ndarray,
     input_matrix: np.ndarray,
     max_iter: int,
-    lr: int,
+    lr: float,
     grid_width: int,
     grid_height: int,
 ) -> np.ndarray:
@@ -34,43 +33,38 @@ def training_loop(
     trained_grid = grid.copy()
     radius = max(grid_width, grid_height) / 2
     initial_radius = radius
+    initial_lr = lr
     time_constant = max_iter / np.log(initial_radius)
-    inner_loop_iter = 0
 
-    # "We enumerate through the training data for some number of iterations (repeating if necessary)..."
-    # Implies max iter is function of number of input vectors
-    # e.g. if max_iter = 100, and num_inputs = 20, then in a batch process we would have 5 iterations
+    all_d_squared = []
+    for iter in tqdm(range(max_iter), "Training..."):
 
-    adj_max_iter_for_batch = round(max_iter / input_matrix.shape[0])
+        # Enumerated input vector
+        vector_idx = iter % input_matrix.shape[0]
+        current_vector = input_matrix[vector_idx]
 
-    lr_debug = []
-    radius_debug = []
-    for batch_iter in tqdm(range(adj_max_iter_for_batch), "Training..."):
-        # Find BMUs in batch. Return BMUs as height, row indices (num_input vectors, 2)
-        bmus, min_sum_squared_diff = find_bmu_vectorised(input_matrix, trained_grid)
+        # Find BMU based on pixel distance
+        bmu, d_squared_to_bmu = find_bmu_simple(current_vector, trained_grid)
+        all_d_squared.append(d_squared_to_bmu)
 
-        # Update previous radius and learning rate with each each batch iteration
-        radius = radius * np.exp(-inner_loop_iter / time_constant)
-        lr = lr * np.exp(-inner_loop_iter / time_constant)
-        inner_loop_iter += 1
-        lr_debug.append(lr)
-        radius_debug.append(radius)
+        # Find neighbourhood nodes based on spatial distance
+        neighbourhood_nodes = get_neighbourhood_nodes(
+            bmu, radius, grid_width, grid_height
+        )
 
-        for idx_input_vector, bmu in enumerate(bmus):
-            neighbourhood_nodes = get_neighbourhood_nodes(
-                bmu, radius, grid_width, grid_height
-            )
-            d_squared = calc_d_squared(neighbourhood_nodes, bmu)  # (num nodes, 1)
-            influence = calc_influence(d_squared, radius)  # (num nodes, 1)
+        # Get weights of nodes and bmu
+        x_idx, y_idx = neighbourhood_nodes[:, 0], neighbourhood_nodes[:, 1]
+        node_weights = trained_grid[x_idx, y_idx, :]  # (num nodes, dim)
+        bmu_weight = trained_grid[bmu[0], bmu[1]]
 
-            # Get variables for updating node weights
-            x_idx, y_idx = neighbourhood_nodes[:, 0], neighbourhood_nodes[:, 1]
-            node_weights = trained_grid[x_idx, y_idx, :]  # (num nodes, dim)
-            current_vector = input_matrix[idx_input_vector]  # (dim,)
+        # Update neighbourhood weights
+        trained_grid[x_idx, y_idx, :] = update_weights(
+            node_weights, bmu_weight, lr, radius, current_vector
+        )
 
-            # Update node weights in the batch of neighbourhood nodes
-            trained_grid[x_idx, y_idx, :] = node_weights + lr * influence * (
-                current_vector - node_weights
-            )
+        # Update learning rate and radius
+        radius_tuning_factor = 0.8  # big number = faster decay
+        radius = initial_radius * np.exp(-radius_tuning_factor * iter / time_constant)
+        lr = initial_lr * np.exp(-iter / time_constant)
 
-    return trained_grid, np.sqrt(np.mean(min_sum_squared_diff))
+    return trained_grid, np.mean(all_d_squared)

@@ -1,10 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-from typing import Dict, Tuple
 
 
-def plot_pixel_inputs(input_vectors, input_filename):
+def plot_pixel_inputs(input_vectors: np.ndarray, input_filename: str) -> plt.Figure:
     num_pixels = input_vectors.shape[0]
     num_channels = input_vectors.shape[1]
 
@@ -27,8 +26,7 @@ def plot_pixel_grid(
     pixel_grid: np.ndarray,
     filename: str,
     config: dict,
-    tick_step=2,
-):
+) -> plt.Figure:
     """
     Plot a grid of pixels
     Assumes the values in pixel dict are 3 dimensional (RGB)
@@ -37,12 +35,8 @@ def plot_pixel_grid(
         pixel_dict: a dictionary of pixel positions and colours
         filename: the filename of the plot to be saved
     """
-    height, width = pixel_grid.shape[0], pixel_grid.shape[1]
 
     fig, ax = plt.subplots()
-    ax.set_xticks(np.arange(0, width + 1, tick_step))
-    ax.set_yticks(np.arange(0, height + 1, tick_step))
-
     ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=10, integer=True))
     ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=10, integer=True))
 
@@ -59,10 +53,5 @@ def plot_pixel_grid(
 
     ax.imshow(pixel_grid)
     fig.savefig(filename)
-    plt.close(fig)  # Close the specific figure
-
+    plt.close(fig)
     return fig
-
-
-def test_plot(pixel_grid):
-    plt.imshow(pixel_grid)
