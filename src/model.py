@@ -1,5 +1,5 @@
 import numpy as np
-from typing import List
+from typing import List, Tuple
 
 
 def update_weights(
@@ -31,7 +31,9 @@ def update_weights(
     return updated_weights
 
 
-def find_bmu_simple(current_vector: np.ndarray, grid: np.ndarray) -> tuple:
+def find_bmu_simple(
+    current_vector: np.ndarray, grid: np.ndarray
+) -> Tuple[Tuple, float]:
     """Find BMU based on pixel distance
 
     Args:
@@ -40,6 +42,7 @@ def find_bmu_simple(current_vector: np.ndarray, grid: np.ndarray) -> tuple:
 
     Returns:
         bmu: the best matching unit.
+        d_squared: euclidean distance squared.
     """
     d_squared = np.sum((grid - current_vector) ** 2, axis=2)  # sum in pixel dim
     _bmu_idx = np.argmin(d_squared)  # returns idx in flat array convention, row mjr
