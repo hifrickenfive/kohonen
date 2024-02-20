@@ -39,8 +39,8 @@ def run_main_function(config: dict, input_matrix=None):
     filename_input = f"exp/plot_of_input_{date_time}.png"
     filename_initial_grid = f"exp/plot_of_initial_grid_{date_time}.png"
     filename_trained_grid = f"exp/plot_of_trained_grid_{date_time}.png"
-    # fig_input = plot_pixel_inputs(input_matrix, filename_input)
-    # fig_initial_grid = plot_pixel_grid(grid, filename_initial_grid, config)
+    fig_input = plot_pixel_inputs(input_matrix, filename_input)
+    fig_initial_grid = plot_pixel_grid(grid, filename_initial_grid, config)
     fig_trained_grid = plot_pixel_grid(trained_grid, filename_trained_grid, config)
 
     # Log
@@ -53,8 +53,7 @@ def run_main_function(config: dict, input_matrix=None):
     }
     log_message = create_log_message(log)
     append_to_log_file(log_message, "logs\\log.txt")
-    # return fig_input, fig_initial_grid, fig_trained_grid, log
-    return None, None, fig_trained_grid, log
+    return fig_input, fig_initial_grid, fig_trained_grid, log
 
 
 if __name__ == "__main__":
