@@ -1,7 +1,8 @@
 import numpy as np
 from tqdm import tqdm
 from src.model import (
-    find_bmu_vectorised,
+    find_bmu_simple,
+    update_weights,
     get_neighbourhood_nodes,
     calc_influence,
     calc_d_squared,
@@ -29,7 +30,8 @@ def plot_kohonen_iteration(
     """
     Plot the current state of the Kohonen map training iteration with various overlays and annotations.
     """
-    figsize = (8, 8)
+    # figsize = (8, 8) #10x10
+    figsize = (80, 80)  # 100x100
 
     fig, ax = plt.subplots(figsize=figsize)
 
@@ -50,32 +52,13 @@ def plot_kohonen_iteration(
     )
     ax.add_patch(radius_circle)
 
-    # # Overlay and annotate each neighbor node with influence value
-    # for (x, y), infl in zip(neighbourhood_nodes, influence):
-    #     node_influence = infl * 100  # scale for size
-    #     ax.scatter(y, x, s=node_influence, c="orange", alpha=0.6)
-    #     infl_value = np.squeeze(infl)
-    #     ax.annotate(
-    #         f"{infl_value:.2f}",
-    #         (y, x),
-    #         textcoords="offset points",
-    #         xytext=(5, 5),
-    #         ha="center",
-    #         color="black",
-    #     )
-
-    weight_change = np.linalg.norm(updated_weights - current_weights, axis=1)
-
-    # Calculate weight change for visualization
-    weight_change = np.linalg.norm(updated_weights - current_weights, axis=1)
-
     # Overlay and annotate each neighbor node with its weight change value
     for idx, (x, y) in enumerate(neighbourhood_nodes):
         # Annotate with the magnitude of weight change
         ax.text(
             y,
             x,
-            f"{weight_change[idx]:.2f}",
+            f"{influence[idx][0]*learning_rate:.2f}",
             ha="center",
             va="center",
             fontsize=6,
@@ -97,7 +80,7 @@ def plot_kohonen_iteration(
         )
 
     # Annotate the overall plot with the current radius, learning rate, and the current input vector's weight
-    plot_info = f"Radius: {radius:.2f}, LR: {learning_rate:.4f}, Input Vec: {np.array2string(input_matrix[vector_idx])}"
+    plot_info = f"Radius: {radius:.2f}, LR: {learning_rate:.4f}, Iter: {iter}, vectorIdx: {vector_idx}"
     ax.text(
         0.5,
         -0.1,
@@ -165,33 +148,32 @@ def training_loop(
     time_constant = max_iter / np.log(initial_radius)
 
     for iter in tqdm(range(max_iter), "Training..."):
+
         vector_idx = iter % input_matrix.shape[0]
         current_vector = input_matrix[vector_idx]
 
-        d_squared = np.sum((grid - current_vector) ** 2, axis=2)  # sum colour pixel dim
-        _bmu_idx = np.argmin(d_squared)
-        bmu = np.unravel_index(_bmu_idx, d_squared.shape)
-
-        radius = initial_radius * np.exp(-iter / time_constant)
-        lr = initial_lr * np.exp(-iter / time_constant)
+        # Find BMU based on pixel distance
+        bmu = find_bmu_simple(current_vector, trained_grid)
 
         neighbourhood_nodes = get_neighbourhood_nodes(
             bmu, radius, grid_width, grid_height
         )
 
-        # Update neighbourhood node weights
+        # radius = initial_radius * np.exp(-iter / time_constant)
+        lr = initial_lr * np.exp(-iter / time_constant)
+
+        # Find grid spatial distance between between nodes position and bmu position
+        d_squared = calc_d_squared(neighbourhood_nodes, bmu)
+        influence = calc_influence(d_squared, radius)  # (num nodes, 1)
+
+        # Get weights of nodes and bmu
         x_idx, y_idx = neighbourhood_nodes[:, 0], neighbourhood_nodes[:, 1]
         node_weights = trained_grid[x_idx, y_idx, :]  # (num nodes, dim)
         bmu_weight = trained_grid[bmu[0], bmu[1]]
 
-        d_squared = np.sum((node_weights - bmu_weight) ** 2, axis=-1)
-        # influence = calc_influence(d_squared, radius)  # (num nodes, 1)
-        influence = np.exp(-d_squared / (2 * radius**2))  # (num nodes,)
-        influence = influence.reshape(-1, 1)  # (num nodes,1)
-
-        # Update node weights in the batch of neighbourhood nodes
-        trained_grid[x_idx, y_idx, :] = node_weights + lr * influence * (
-            current_vector - node_weights
+        # Update weights
+        trained_grid[x_idx, y_idx, :] = update_weights(
+            node_weights, bmu_weight, lr, radius, current_vector
         )
 
         # plot_kohonen_iteration(
@@ -208,4 +190,4 @@ def training_loop(
         #     trained_grid[x_idx, y_idx, :],
         # )
 
-    return trained_grid, np.mean(np.sqrt(d_squared))
+    return trained_grid, 0
