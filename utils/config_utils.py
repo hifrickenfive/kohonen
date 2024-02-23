@@ -75,6 +75,16 @@ def check_config(config):
                 "minimum": 0,
                 "maximum": sys.maxsize,
             },
+            "radius_tuning_factor": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+            },
+            "influence_tuning_factor": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100.0,
+            },
         },
         "required": [
             "grid_width",

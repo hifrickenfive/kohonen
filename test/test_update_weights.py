@@ -12,7 +12,7 @@ def test_bmu():
     expected_weights = np.array([1, 1, 1])
 
     updated_weights = update_weights(
-        node_weights, bmu_weight, lr, radius, current_vector
+        node_weights, bmu_weight, lr, radius, current_vector, influence_tuning_factor=1
     )
 
     assert list(expected_weights) == list(updated_weights)
@@ -39,7 +39,7 @@ def test_basic1x1():
     )
 
     updated_weights = update_weights(
-        node_weights, bmu_weight, lr, radius, current_vector
+        node_weights, bmu_weight, lr, radius, current_vector, influence_tuning_factor=1
     )
 
     assert list(expected_weights) == list(updated_weights)

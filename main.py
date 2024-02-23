@@ -1,11 +1,15 @@
 import argparse
 from datetime import datetime
+import mlflow
 import numpy as np
 import time
-from utils.config_utils import load_and_check_config
+
 from src.trainer import training_loop
-from utils.plot_utils import plot_pixel_grid, plot_pixel_inputs
+from utils.config_utils import load_and_check_config
 from utils.log_utils import append_to_log_file, create_log_message
+from utils.plot_utils import plot_pixel_grid, plot_pixel_inputs
+
+mlflow.set_experiment("Setup logging of an array of metrics")
 
 
 def run_main_function(config: dict, input_matrix=None):
@@ -24,13 +28,15 @@ def run_main_function(config: dict, input_matrix=None):
         )
 
     # Train
-    trained_grid, final_av_dist_to_bmu = training_loop(
+    trained_grid, all_d_squared_to_bmu = training_loop(
         grid,
         input_matrix,
         config["max_iter"],
         config["learning_rate"],
         config["grid_width"],
         config["grid_height"],
+        config["radius_tuning_factor"],
+        config["influence_tuning_factor"],
     )
 
     # Plot results
@@ -43,16 +49,33 @@ def run_main_function(config: dict, input_matrix=None):
     fig_initial_grid = plot_pixel_grid(grid, filename_initial_grid, config)
     fig_trained_grid = plot_pixel_grid(trained_grid, filename_trained_grid, config)
 
-    # Log
+    # Log to txt
     elapsed_time = time.time() - start_time
     log = {
         "Datetime": now,
         "Config": config,
         "Elapsed time": elapsed_time,
-        "final_av_dist_to_bmu": final_av_dist_to_bmu,
+        "final_av_dist_to_bmu": np.mean(all_d_squared_to_bmu[-20:]),
     }
     log_message = create_log_message(log)
     append_to_log_file(log_message, "logs\\log.txt")
+
+    # Log to mlflow
+    batch_size = config["num_input_vectors"]
+    means = [
+        np.mean(all_d_squared_to_bmu[i : i + batch_size])
+        for i in range(0, len(all_d_squared_to_bmu), batch_size)
+    ]
+    with mlflow.start_run():
+        mlflow.log_params(config)
+        for idx, mean_dsq2bmu in enumerate(means):
+            mlflow.log_metric("mean_dsq2bmu", mean_dsq2bmu, step=idx + 1)
+        mlflow.log_artifact("src\\trainer.py")
+        mlflow.log_artifact("src\\model.py")
+        mlflow.log_artifact(filename_input)
+        mlflow.log_artifact(filename_initial_grid)
+        mlflow.log_artifact(filename_trained_grid)
+
     return fig_input, fig_initial_grid, fig_trained_grid, log
 
 
