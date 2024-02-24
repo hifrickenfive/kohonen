@@ -8,14 +8,17 @@ pip install -r requirements.txt
 # Usage 
 ## Terminal
 python main.py  
-python main.py <config_file_name>
+python main.py TC4_config.yaml
 
 ## Streamlit (local)
 streamlit run streamlit.py  
 Then go to localhost:8501 on your web browser
 
-# ML Flow (local)
-mlflow server --host 127.0.0.1 --port 8080
+## Streamlit (web)
+https://kohonen.streamlit.app/
+
+## ML Flow (local)
+mlflow server --host 127.0.0.1 --port 8080    
 Then go to localhost:8080 on your web browser
 
 ## Docker
