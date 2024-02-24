@@ -8,8 +8,7 @@ def test_central_bmu_small_radius():
     radius = 1
     grid_width = 10
     grid_height = 10
-    expected_neighbours = np.array([[4, 5], [5, 4], [5, 6], [6, 5]])
-    expected_neighbours = {(4, 5), (5, 4), (5, 6), (6, 5)}
+    expected_neighbours = {(4, 5), (5, 4), (5, 6), (6, 5), (5, 5)}
 
     neighbourhood_nodes = get_neighbourhood_nodes(bmu, radius, grid_width, grid_height)
     assert set(tuple(node) for node in neighbourhood_nodes) == expected_neighbours
@@ -20,7 +19,7 @@ def test_large_radius_exceeding_grid():
     radius = 10
     grid_width = 2
     grid_height = 2
-    expected_neighbours = {(0, 0), (0, 1), (1, 0)}
+    expected_neighbours = {(0, 0), (0, 1), (1, 0), (1, 1)}
     neighbourhood_nodes = get_neighbourhood_nodes(bmu, radius, grid_width, grid_height)
     assert set(tuple(node) for node in neighbourhood_nodes) == expected_neighbours
 
@@ -30,7 +29,7 @@ def test_radius_zero():
     radius = 0
     grid_width = 10
     grid_height = 10
-    expected_neighbours = set()
+    expected_neighbours = {(3, 3)}
     neighbourhood_nodes = get_neighbourhood_nodes(bmu, radius, grid_width, grid_height)
     assert set(tuple(node) for node in neighbourhood_nodes) == expected_neighbours
 
@@ -40,7 +39,7 @@ def test_float_radius():
     radius = 1.5
     grid_width = 10
     grid_height = 10
-    # Expected neighbors might include those within a radius of 1.5 but not beyond
+    # Expected neighbours might include those within a radius of 1.5 but not beyond
     expected_neighbours = {
         (4, 5),
         (5, 4),
@@ -50,6 +49,7 @@ def test_float_radius():
         (6, 6),
         (4, 6),
         (6, 4),
+        (5, 5),
     }
     neighbourhood_nodes = get_neighbourhood_nodes(bmu, radius, grid_width, grid_height)
     neighbourhood_nodes_set = set(tuple(node) for node in neighbourhood_nodes)
@@ -62,7 +62,7 @@ def test_corner():
     grid_height = 3
     bmu = np.array([0, 2])
     radius = 1
-    expected_neighbours = {(0, 1), (1, 2)}
+    expected_neighbours = {(0, 1), (1, 2), (0, 2)}
 
     neighbourhood_nodes = get_neighbourhood_nodes(bmu, radius, grid_width, grid_height)
     neighbourhood_nodes_set = set(tuple(node) for node in neighbourhood_nodes)

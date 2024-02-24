@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 from src.model import update_weights, calc_influence, calc_d_squared
 

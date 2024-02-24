@@ -1,9 +1,9 @@
 def create_log_message(log):
     log_message = (
-        f"Datetime: {log['Datetime']}\n"
-        f"Config: {log['Config']} \n"
-        f"Elapsed time: {log['Elapsed time']:.3f} seconds\n"
-        f"Final score: {log['Av. gradient magnitude']:.3f}. Average gradient magnitude of final image. Lower is better"
+        f"fatetime: {log['datetime']}\n"
+        f"Config: {log['config']} \n"
+        f"Elapsed time: {log['elapsed_time']:.3f} seconds\n"
+        f"Final score: {log['av_gradient_magnitude']:.3f}. Average gradient magnitude of final image. Lower is better"
     )
     return log_message
 

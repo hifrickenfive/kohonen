@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from typing import List, Tuple
+import matplotlib.pyplot as plt
 
 
 def update_weights(
@@ -84,9 +85,6 @@ def get_neighbourhood_nodes(
     # x -> [-1, 0, 1, -1, 0, 1, -1, 0, 1]
     # y -> [-1, -1, -1, 0, 0, 0, 1, 1, 1]
     delta_nodes = np.column_stack((delta_x.ravel(), delta_y.ravel()))
-
-    # 3. Remove bmu (0,0) by scanning across the rows, i.e. along columns
-    delta_nodes = delta_nodes[~np.all(delta_nodes == 0, axis=1)]
 
     candidate_nodes = np.array(bmu) + delta_nodes
 

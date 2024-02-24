@@ -1,10 +1,14 @@
 import numpy as np
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
+from utils.plot_utils import plot_bmu_and_neighbours
 from src.model import (
     find_bmu_simple,
     update_weights,
     get_neighbourhood_nodes,
+    calc_d_squared,
+    calc_influence,
 )
 
 
@@ -45,8 +49,10 @@ def training_loop(
         vector_idx = iter % input_matrix.shape[0]
         current_vector = input_matrix[vector_idx]
 
+        # current_vector = input_matrix[np.random.randint(0, 19)]
+
         # Find BMU based on pixel distance
-        bmu, d_squared_to_bmu = find_bmu_simple(current_vector, trained_grid)
+        bmu, __ = find_bmu_simple(current_vector, trained_grid)
 
         # Find neighbourhood nodes based on spatial distance
         neighbourhood_nodes = get_neighbourhood_nodes(
@@ -59,14 +65,36 @@ def training_loop(
         bmu_weight = trained_grid[bmu[0], bmu[1]]
 
         # Smaller influence_tuning_factor slows down the decay of the influence
-        trained_grid[x_idx, y_idx, :] = update_weights(
-            node_weights,
-            bmu_weight,
-            lr,
-            radius,
-            current_vector,
-            influence_tuning_factor,
+        # trained_grid[x_idx, y_idx, :] = update_weights(
+        #     node_weights,
+        #     bmu_weight,
+        #     lr,
+        #     radius,
+        #     current_vector,
+        #     influence_tuning_factor,
+        # )
+
+        # Find the spatial distance between between neighbourhood node positions and the bmu
+        d_squared = calc_d_squared(neighbourhood_nodes, bmu)
+        influence = calc_influence(d_squared, radius, 1)
+
+        # Update weights of the neighbourhood nodes
+        trained_grid[x_idx, y_idx, :] = node_weights + lr * influence * (
+            current_vector - node_weights
         )
+
+        # Uncomment to plot BMU and neighbours each iteration
+        # plot_bmu_and_neighbours(
+        #     trained_grid,
+        #     bmu,
+        #     neighbourhood_nodes,
+        #     influence,
+        #     d_squared,
+        #     radius,
+        #     iter,
+        #     vector_idx,
+        #     current_vector,
+        # )
 
         # Update learning rate and radius
         # Smaller radius tuning factor slows down the decay of the radius

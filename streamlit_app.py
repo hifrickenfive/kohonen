@@ -96,4 +96,4 @@ with right_col:
         st.pyplot(st.session_state.fig_trained_grid)
 
 if "log" in st.session_state:
-    st.write(f"Elapsed time: {st.session_state.log['Elapsed time']:.3f} seconds")
+    st.write(f"Elapsed time: {st.session_state.log['elapsed_time']:.3f} seconds")
