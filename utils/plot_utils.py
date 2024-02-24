@@ -4,9 +4,20 @@ import matplotlib.ticker as ticker
 import matplotlib.patches as patches
 import numpy as np
 import os
+from typing import List, Tuple
 
 
 def plot_pixel_inputs(input_vectors: np.ndarray, input_filename: str) -> plt.Figure:
+    """
+    Plots the vector of pixels that serve as the input to the kohonen map
+    Assumes the values in pixel dict are 3 dimensional (RGB)
+
+    Args:
+        input_vectors: the input vectors
+        input_filename: the filename to save the plot of the input vector
+
+    Returns: plot saved in filename
+    """
     num_pixels = input_vectors.shape[0]
     num_channels = input_vectors.shape[1]
 
@@ -37,6 +48,8 @@ def plot_pixel_grid(
     Args:
         pixel_dict: a dictionary of pixel positions and colours
         filename: the filename of the plot to be saved
+
+    Returns: plot saved in filename
     """
 
     fig, ax = plt.subplots()
@@ -61,16 +74,33 @@ def plot_pixel_grid(
 
 
 def plot_bmu_and_neighbours(
-    grid,
-    bmu,
-    neighbourhood_nodes,
-    influences,
-    d_squared,
-    radius,
-    iter_num,
-    bmu_idx,
-    input_vector,
+    grid: np.ndarray,
+    bmu: Tuple[int, int],
+    neighbourhood_nodes: np.ndarray,
+    influences: np.ndarray,
+    d_squared: np.ndarray,
+    radius: float,
+    iter_num: int,
+    bmu_idx: int,
+    input_vector: np.ndarray,
+    folder: str = "debug",
 ):
+    """Plot the grid at each iteration, show BMU, its neighbours and their
+    influence and d_squared values. Show input pixel for context.
+
+    Args:
+        grid: the trained grid at the current iteration
+        bmu: the best matching unit
+        neighbourhood_nodes: the nodes in the neighbourhood of the BMU
+        influences: the influence of each node in the neighbourhood
+        d_squared: the euclidean distance squared of each node in the neighbourhood
+        radius: the radius of the neighbourhood
+        iter_num: the current iteration number
+        bmu_idx: the index of the BMU in the input vector
+        input_vector: the input vector
+
+    Returns: plot saved in folder
+    """
     fig, ax = plt.subplots()
     ax.imshow(grid)
 
@@ -114,7 +144,6 @@ def plot_bmu_and_neighbours(
     ax.set_title(f"BMU: ({bmu_y}, {bmu_x}), Iter: {iter_num}")
 
     # Save
-    folder = "debug"
     os.makedirs(folder, exist_ok=True)
     plt.savefig(
         os.path.join(
@@ -124,11 +153,18 @@ def plot_bmu_and_neighbours(
     )
     plt.close(fig)
 
-    title = f"BMU: ({bmu_y}, {bmu_x}), Iter: {iter_num}"
-    return fig, title
 
+def animate_plots(folder_path: str = "debug"):
+    """
+    Create an mp4 animation given the plots of each iteration in the training run
 
-def animate_plots(folder_path="debug"):
+    Assumptions: the plots are prepended with "iter_"
+
+    Args:
+        folder_path: the folder containing the plots
+
+    Returns: .avi saved in folder
+    """
     file_names = sorted(
         [
             os.path.join(folder_path, f)

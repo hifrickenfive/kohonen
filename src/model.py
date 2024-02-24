@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
-from typing import List, Tuple
-import matplotlib.pyplot as plt
+from typing import Tuple
 
 
 def update_weights(
@@ -36,9 +35,7 @@ def update_weights(
     return updated_weights
 
 
-def find_bmu_simple(
-    current_vector: np.ndarray, grid: np.ndarray
-) -> Tuple[Tuple, float]:
+def find_bmu_simple(current_vector: np.ndarray, grid: np.ndarray) -> Tuple[int, int]:
     """Find BMU based on pixel distance
 
     Args:
@@ -56,8 +53,8 @@ def find_bmu_simple(
 
 
 def get_neighbourhood_nodes(
-    bmu: np.ndarray, radius: float, grid_width: int, grid_height: int
-) -> List[np.ndarray]:
+    bmu: Tuple[int, int], radius: float, grid_width: int, grid_height: int
+) -> np.ndarray:
     """
     Get the nodes in the neighbourhood of the BMU given a radius
 
@@ -102,7 +99,9 @@ def get_neighbourhood_nodes(
     return pruned_nodes[within_radius]
 
 
-def calc_influence(d_squared: float, radius: float, influence_tuning_factor=1) -> float:
+def calc_influence(
+    d_squared: np.ndarray[int], radius: float, influence_tuning_factor=1
+) -> np.ndarray:
     """Calculate the influence of a node based on its distance from the BMU
 
     Args:
@@ -116,7 +115,7 @@ def calc_influence(d_squared: float, radius: float, influence_tuning_factor=1) -
     return np.exp(-influence_tuning_factor * d_squared / (2 * radius**2))
 
 
-def calc_d_squared(neighbourhood_nodes: np.ndarray, bmu: tuple):
+def calc_d_squared(neighbourhood_nodes: np.ndarray, bmu: Tuple[int, int]) -> np.ndarray:
     """Calculate the squared euclidean distance between the BMU and the neighbourhood nodes
 
     Args:
@@ -130,7 +129,7 @@ def calc_d_squared(neighbourhood_nodes: np.ndarray, bmu: tuple):
         (neighbourhood_nodes - bmu) ** 2,
         axis=-1,
         keepdims=True,
-    )  # -1 to retain (n,1) shape else (n,)
+    )  # axis=-1 to retain (n,1) shape else sums over all dims and gives (1,1)
     return d_squared
 
 
