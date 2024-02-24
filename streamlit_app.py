@@ -1,4 +1,6 @@
 import streamlit as st
+import os
+
 from main import run_main_function
 
 
@@ -15,6 +17,13 @@ def on_button_click():
         "influence_decay_factor": st.session_state.influence_decay_factor,
     }
     st.session_state.run_id += 1
+
+
+def get_path_to_vid(filename):
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    root_project_dir = os.path.normpath(script_dir)
+    full_config_file_path = os.path.join(root_project_dir, "videos", filename)
+    return full_config_file_path
 
 
 st.subheader("Kohonen Map Training App!")
@@ -119,6 +128,6 @@ with tab2:
     )
 
     # with right_col_tab2:
-    video_file = open("videos\\ani_after_bug_fixes.mp4", "rb")
+    video_file = open(get_path_to_vid("animation.mp4"), "rb")
     video_bytes = video_file.read()
     st.video(video_bytes)

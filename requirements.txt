@@ -1,3 +1,5 @@
+imageio==2.34.0
+imageio-ffmpeg==0.4.9
 jsonschema==4.21.1
 jsonschema-specifications==2023.12.1
 matplotlib==3.8.0
