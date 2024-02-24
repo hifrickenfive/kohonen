@@ -29,7 +29,7 @@ def run_main_function(config: dict, input_matrix=None):
         )
 
     # Train
-    trained_grid, all_d_squared_to_bmu = training_loop(
+    trained_grid = training_loop(
         grid,
         input_matrix,
         config["max_iter"],

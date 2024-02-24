@@ -39,7 +39,6 @@ def training_loop(
     initial_lr = lr
     time_constant = max_iter / np.log(initial_radius)
 
-    all_d_squared_to_bmu = []
     for iter in tqdm(range(max_iter), "Training..."):
 
         # Enumerated input vector
@@ -48,7 +47,6 @@ def training_loop(
 
         # Find BMU based on pixel distance
         bmu, d_squared_to_bmu = find_bmu_simple(current_vector, trained_grid)
-        all_d_squared_to_bmu.append(d_squared_to_bmu)
 
         # Find neighbourhood nodes based on spatial distance
         neighbourhood_nodes = get_neighbourhood_nodes(
@@ -75,4 +73,4 @@ def training_loop(
         radius = initial_radius * np.exp(-radius_tuning_factor * iter / time_constant)
         lr = initial_lr * np.exp(-iter / time_constant)
 
-    return trained_grid, all_d_squared_to_bmu
+    return trained_grid
