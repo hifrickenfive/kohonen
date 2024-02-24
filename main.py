@@ -5,11 +5,12 @@ import numpy as np
 import time
 
 from src.trainer import training_loop
+from src.model import calc_metric_av_gradient_mag
 from utils.config_utils import load_and_check_config
 from utils.log_utils import append_to_log_file, create_log_message
 from utils.plot_utils import plot_pixel_grid, plot_pixel_inputs
 
-mlflow.set_experiment("Setup logging of an array of metrics")
+# mlflow.set_experiment("Setup logging of an array of metrics")
 
 
 def run_main_function(config: dict, input_matrix=None):
@@ -55,26 +56,26 @@ def run_main_function(config: dict, input_matrix=None):
         "Datetime": now,
         "Config": config,
         "Elapsed time": elapsed_time,
-        "final_av_dist_to_bmu": np.mean(all_d_squared_to_bmu[-20:]),
+        "Av. gradient magnitude": calc_metric_av_gradient_mag(filename_trained_grid),
     }
     log_message = create_log_message(log)
     append_to_log_file(log_message, "logs\\log.txt")
 
     # Log to mlflow
-    batch_size = config["num_input_vectors"]
-    means = [
-        np.mean(all_d_squared_to_bmu[i : i + batch_size])
-        for i in range(0, len(all_d_squared_to_bmu), batch_size)
-    ]
-    with mlflow.start_run():
-        mlflow.log_params(config)
-        for idx, mean_dsq2bmu in enumerate(means):
-            mlflow.log_metric("mean_dsq2bmu", mean_dsq2bmu, step=idx + 1)
-        mlflow.log_artifact("src\\trainer.py")
-        mlflow.log_artifact("src\\model.py")
-        mlflow.log_artifact(filename_input)
-        mlflow.log_artifact(filename_initial_grid)
-        mlflow.log_artifact(filename_trained_grid)
+    # batch_size = config["num_input_vectors"]
+    # means = [
+    #     np.mean(all_d_squared_to_bmu[i : i + batch_size])
+    #     for i in range(0, len(all_d_squared_to_bmu), batch_size)
+    # ]
+    # with mlflow.start_run():
+    #     mlflow.log_params(config)
+    #     for idx, mean_dsq2bmu in enumerate(means):
+    #         mlflow.log_metric("mean_dsq2bmu", mean_dsq2bmu, step=idx + 1)
+    #     mlflow.log_artifact("src\\trainer.py")
+    #     mlflow.log_artifact("src\\model.py")
+    #     mlflow.log_artifact(filename_input)
+    #     mlflow.log_artifact(filename_initial_grid)
+    #     mlflow.log_artifact(filename_trained_grid)
 
     return fig_input, fig_initial_grid, fig_trained_grid, log
 

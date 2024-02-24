@@ -3,7 +3,7 @@ def create_log_message(log):
         f"Datetime: {log['Datetime']}\n"
         f"Config: {log['Config']} \n"
         f"Elapsed time: {log['Elapsed time']:.3f} seconds\n"
-        f"Final score: {log['final_av_dist_to_bmu']:.3f}. final_av_dist_to_bmu. Lower is better"
+        f"Final score: {log['Av. gradient magnitude']:.3f}. Average gradient magnitude of final image. Lower is better"
     )
     return log_message
 
