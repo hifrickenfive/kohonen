@@ -14,7 +14,7 @@ diary.md
 *exp/*
 *analysis/*
 logs/pytest-logs.txt
-
+mlruns/
 
 # C extensions
 *.so

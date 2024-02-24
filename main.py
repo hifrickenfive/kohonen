@@ -2,10 +2,12 @@ import argparse
 from datetime import datetime
 import numpy as np
 import time
-from utils.config_utils import load_and_check_config
+
 from src.trainer import training_loop
-from utils.plot_utils import plot_pixel_grid, plot_pixel_inputs
+from src.model import calc_metric_av_gradient_mag
+from utils.config_utils import load_and_check_config
 from utils.log_utils import append_to_log_file, create_log_message
+from utils.plot_utils import plot_pixel_grid, plot_pixel_inputs
 
 
 def run_main_function(config: dict, input_matrix=None):
@@ -24,13 +26,15 @@ def run_main_function(config: dict, input_matrix=None):
         )
 
     # Train
-    trained_grid, final_av_dist_to_bmu = training_loop(
+    trained_grid = training_loop(
         grid,
         input_matrix,
         config["max_iter"],
         config["learning_rate"],
         config["grid_width"],
         config["grid_height"],
+        config["radius_decay_factor"],
+        config["influence_decay_factor"],
     )
 
     # Plot results
@@ -43,16 +47,17 @@ def run_main_function(config: dict, input_matrix=None):
     fig_initial_grid = plot_pixel_grid(grid, filename_initial_grid, config)
     fig_trained_grid = plot_pixel_grid(trained_grid, filename_trained_grid, config)
 
-    # Log
+    # Log to txt
     elapsed_time = time.time() - start_time
     log = {
-        "Datetime": now,
-        "Config": config,
-        "Elapsed time": elapsed_time,
-        "final_av_dist_to_bmu": final_av_dist_to_bmu,
+        "datetime": now,
+        "config": config,
+        "elapsed_time": elapsed_time,
+        "av_gradient_magnitude": calc_metric_av_gradient_mag(filename_trained_grid),
     }
     log_message = create_log_message(log)
     append_to_log_file(log_message, "logs\\log.txt")
+
     return fig_input, fig_initial_grid, fig_trained_grid, log
 
 

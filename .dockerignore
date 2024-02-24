@@ -1,0 +1,76 @@
+# User defined
+# need * and ** for docker https://stackoverflow.com/questions/36295418/dockerignore-mentioned-files-are-not-ignored
+*.git*
+*scratch*
+*pstats*
+*log.txt*
+*test.ipynb
+*test_config.yaml
+*.vscode
+*debug*
+**test_config.yaml
+*diary.md
+*exp/*
+*analysis/*
+*logs/pytest-logs.txt
+*mlruns/
+**__pycache__/
+*analysis*
+*logs/*
+*exp/*
+*develop*
+
+
+# Byte-compiled / optimized / DLL files
+*__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyo
+*.pyd
+
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/

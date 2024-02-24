@@ -1,5 +1,6 @@
+import cv2
 import numpy as np
-from typing import List, Tuple
+from typing import Tuple
 
 
 def update_weights(
@@ -8,6 +9,7 @@ def update_weights(
     lr: float,
     radius: float,
     current_vector_weights: np.ndarray,
+    influence_decay_factor: float,
 ) -> np.ndarray:
     """
     Update the weights of the nodes in the neighbourhood of the BMU
@@ -24,16 +26,16 @@ def update_weights(
     """
     # Find spatial distance between between nodes position and bmu position
     d_squared = calc_d_squared(node_weights, bmu_weights)
-    influence = calc_influence(d_squared, radius)  # (num nodes, 1)
+    influence = calc_influence(
+        d_squared, radius, influence_decay_factor
+    )  # (num nodes, 1)
     updated_weights = node_weights + lr * influence * (
         current_vector_weights - node_weights
     )
     return updated_weights
 
 
-def find_bmu_simple(
-    current_vector: np.ndarray, grid: np.ndarray
-) -> Tuple[Tuple, float]:
+def find_bmu_simple(current_vector: np.ndarray, grid: np.ndarray) -> Tuple[int, int]:
     """Find BMU based on pixel distance
 
     Args:
@@ -51,8 +53,8 @@ def find_bmu_simple(
 
 
 def get_neighbourhood_nodes(
-    bmu: np.ndarray, radius: float, grid_width: int, grid_height: int
-) -> List[np.ndarray]:
+    bmu: Tuple[int, int], radius: float, grid_width: int, grid_height: int
+) -> np.ndarray:
     """
     Get the nodes in the neighbourhood of the BMU given a radius
 
@@ -81,9 +83,6 @@ def get_neighbourhood_nodes(
     # y -> [-1, -1, -1, 0, 0, 0, 1, 1, 1]
     delta_nodes = np.column_stack((delta_x.ravel(), delta_y.ravel()))
 
-    # 3. Remove bmu (0,0) by scanning across the rows, i.e. along columns
-    delta_nodes = delta_nodes[~np.all(delta_nodes == 0, axis=1)]
-
     candidate_nodes = np.array(bmu) + delta_nodes
 
     # 4. Prune nodes beyond grid limits (x,y) where x is height, y is width
@@ -100,22 +99,23 @@ def get_neighbourhood_nodes(
     return pruned_nodes[within_radius]
 
 
-def calc_influence(d_squared: float, radius: float) -> float:
+def calc_influence(
+    d_squared: np.ndarray[int], radius: float, influence_decay_factor: float = 1.0
+) -> np.ndarray:
     """Calculate the influence of a node based on its distance from the BMU
 
     Args:
         d_squared: euclidean distance squared
         radius: radius of the neighbourhood
+        influence_decay_factor: larger value = faster decay
 
     Returns:
         influence: the influence of the node
     """
-
-    factor = 1  # big number = faster decay
-    return np.exp(-factor * d_squared / (2 * radius**2))
+    return np.exp(-influence_decay_factor * d_squared / (2 * radius**2))
 
 
-def calc_d_squared(neighbourhood_nodes: np.ndarray, bmu: tuple):
+def calc_d_squared(neighbourhood_nodes: np.ndarray, bmu: Tuple[int, int]) -> np.ndarray:
     """Calculate the squared euclidean distance between the BMU and the neighbourhood nodes
 
     Args:
@@ -129,5 +129,27 @@ def calc_d_squared(neighbourhood_nodes: np.ndarray, bmu: tuple):
         (neighbourhood_nodes - bmu) ** 2,
         axis=-1,
         keepdims=True,
-    )
+    )  # axis=-1 to retain (n,1) shape else sums over all dims and gives (1,1)
     return d_squared
+
+
+def calc_metric_av_gradient_mag(image_path: str) -> float:
+    """
+    Create a metric to evaluate the average gradient magnitude of an image
+
+    credit: https://pyimagesearch.com/2021/05/12/image-gradients-with-opencv-sobel-and-scharr/
+
+    Args:
+        image_path: str, path to image
+    """
+    image = cv2.imread(image_path)
+
+    # Find image gradient in x and y direction
+    gX = cv2.Sobel(image, cv2.CV_64F, dx=1, dy=0, ksize=3)  # img shape
+    gY = cv2.Sobel(image, cv2.CV_64F, dx=0, dy=1, ksize=3)
+
+    # Eval gradient magnitude
+    gradient_magnitude = np.sqrt(gX**2 + gY**2)
+    avg_gradient_magnitude = np.mean(gradient_magnitude)
+
+    return avg_gradient_magnitude

@@ -1,12 +1,12 @@
 import numpy as np
 from tqdm import tqdm
+
 from src.model import (
     find_bmu_simple,
-    update_weights,
     get_neighbourhood_nodes,
+    calc_d_squared,
+    calc_influence,
 )
-
-from matplotlib import pyplot as plt
 
 
 def training_loop(
@@ -16,6 +16,8 @@ def training_loop(
     lr: float,
     grid_width: int,
     grid_height: int,
+    radius_decay_factor: float = 0.2,
+    influence_decay_factor: float = 1.0,
 ) -> np.ndarray:
     """
     Trains a Kohonen map
@@ -38,7 +40,6 @@ def training_loop(
     initial_lr = lr
     time_constant = max_iter / np.log(initial_radius)
 
-    final_batch_d_squared = []
     for iter in tqdm(range(max_iter), "Training..."):
 
         # Enumerated input vector
@@ -46,10 +47,7 @@ def training_loop(
         current_vector = input_matrix[vector_idx]
 
         # Find BMU based on pixel distance
-        bmu, d_squared_to_bmu = find_bmu_simple(current_vector, trained_grid)
-
-        if iter >= max_iter - input_matrix.shape[0]:
-            final_batch_d_squared.append(d_squared_to_bmu)
+        bmu, __ = find_bmu_simple(current_vector, trained_grid)
 
         # Find neighbourhood nodes based on spatial distance
         neighbourhood_nodes = get_neighbourhood_nodes(
@@ -59,16 +57,19 @@ def training_loop(
         # Get weights of nodes and bmu
         x_idx, y_idx = neighbourhood_nodes[:, 0], neighbourhood_nodes[:, 1]
         node_weights = trained_grid[x_idx, y_idx, :]  # (num nodes, dim)
-        bmu_weight = trained_grid[bmu[0], bmu[1]]
 
-        # Update neighbourhood weights
-        trained_grid[x_idx, y_idx, :] = update_weights(
-            node_weights, bmu_weight, lr, radius, current_vector
+        # Find the spatial distance between between neighbourhood node positions and the bmu
+        d_squared = calc_d_squared(neighbourhood_nodes, bmu)
+        influence = calc_influence(d_squared, radius, influence_decay_factor)
+
+        # Update weights of the neighbourhood nodes
+        trained_grid[x_idx, y_idx, :] = node_weights + lr * influence * (
+            current_vector - node_weights
         )
 
         # Update learning rate and radius
-        radius_tuning_factor = 0.8  # big number = faster decay
-        radius = initial_radius * np.exp(-radius_tuning_factor * iter / time_constant)
+        # Smaller radius tuning factor slows down the decay of the radius
+        radius = initial_radius * np.exp(-radius_decay_factor * iter / time_constant)
         lr = initial_lr * np.exp(-iter / time_constant)
 
-    return trained_grid, np.mean(final_batch_d_squared)
+    return trained_grid

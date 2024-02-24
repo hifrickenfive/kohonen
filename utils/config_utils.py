@@ -19,7 +19,7 @@ def load_and_check_config(config_file: str):
 
     full_config_file_path = os.path.join(
         root_project_dir, "config", filename_with_ext
-    )  # to resolve compatibility linux vs. windows
+    )  # to resolve compatibility docker vs. windows
 
     try:
         with open(full_config_file_path, "r") as f:
@@ -74,6 +74,16 @@ def check_config(config):
                 "type": "integer",
                 "minimum": 0,
                 "maximum": sys.maxsize,
+            },
+            "radius_decay_factor": {
+                "type": "number",
+                "minimum": 0.1,
+                "maximum": 10,
+            },
+            "influence_decay_factor": {
+                "type": "number",
+                "minimum": 0.1,
+                "maximum": 10,
             },
         },
         "required": [

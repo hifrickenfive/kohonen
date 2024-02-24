@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 from src.model import update_weights, calc_influence, calc_d_squared
 
@@ -12,7 +13,7 @@ def test_bmu():
     expected_weights = np.array([1, 1, 1])
 
     updated_weights = update_weights(
-        node_weights, bmu_weight, lr, radius, current_vector
+        node_weights, bmu_weight, lr, radius, current_vector, influence_decay_factor=1
     )
 
     assert list(expected_weights) == list(updated_weights)
@@ -39,7 +40,7 @@ def test_basic1x1():
     )
 
     updated_weights = update_weights(
-        node_weights, bmu_weight, lr, radius, current_vector
+        node_weights, bmu_weight, lr, radius, current_vector, influence_decay_factor=1
     )
 
     assert list(expected_weights) == list(updated_weights)
