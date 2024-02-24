@@ -5,5 +5,5 @@ learning_rate: 0.1
 num_input_vectors: 20
 dim_of_input_vector: 3
 random_seed: 40
-radius_tuning_factor: 1.0
-influence_tuning_factor: 1.0
+radius_decay_factor: 1.0
+influence_decay_factor: 1.0

@@ -16,8 +16,8 @@ def training_loop(
     lr: float,
     grid_width: int,
     grid_height: int,
-    radius_tuning_factor: float,
-    influence_tuning_factor: float,
+    radius_decay_factor: float = 0.2,
+    influence_decay_factor: float = 1.0,
 ) -> np.ndarray:
     """
     Trains a Kohonen map
@@ -60,7 +60,7 @@ def training_loop(
 
         # Find the spatial distance between between neighbourhood node positions and the bmu
         d_squared = calc_d_squared(neighbourhood_nodes, bmu)
-        influence = calc_influence(d_squared, radius, 1)
+        influence = calc_influence(d_squared, radius, influence_decay_factor)
 
         # Update weights of the neighbourhood nodes
         trained_grid[x_idx, y_idx, :] = node_weights + lr * influence * (
@@ -69,7 +69,7 @@ def training_loop(
 
         # Update learning rate and radius
         # Smaller radius tuning factor slows down the decay of the radius
-        radius = initial_radius * np.exp(-radius_tuning_factor * iter / time_constant)
+        radius = initial_radius * np.exp(-radius_decay_factor * iter / time_constant)
         lr = initial_lr * np.exp(-iter / time_constant)
 
     return trained_grid

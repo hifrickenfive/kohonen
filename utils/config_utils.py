@@ -75,15 +75,15 @@ def check_config(config):
                 "minimum": 0,
                 "maximum": sys.maxsize,
             },
-            "radius_tuning_factor": {
+            "radius_decay_factor": {
                 "type": "number",
-                "minimum": 0,
-                "maximum": 1,
+                "minimum": 0.1,
+                "maximum": 10,
             },
-            "influence_tuning_factor": {
+            "influence_decay_factor": {
                 "type": "number",
-                "minimum": 0,
-                "maximum": 100.0,
+                "minimum": 0.1,
+                "maximum": 10,
             },
         },
         "required": [

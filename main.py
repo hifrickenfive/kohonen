@@ -1,6 +1,5 @@
 import argparse
 from datetime import datetime
-import mlflow
 import numpy as np
 import time
 
@@ -9,8 +8,6 @@ from src.model import calc_metric_av_gradient_mag
 from utils.config_utils import load_and_check_config
 from utils.log_utils import append_to_log_file, create_log_message
 from utils.plot_utils import plot_pixel_grid, plot_pixel_inputs
-
-mlflow.set_experiment("Experiment d2 for influence")
 
 
 def run_main_function(config: dict, input_matrix=None):
@@ -36,8 +33,8 @@ def run_main_function(config: dict, input_matrix=None):
         config["learning_rate"],
         config["grid_width"],
         config["grid_height"],
-        config["radius_tuning_factor"],
-        config["influence_tuning_factor"],
+        config["radius_decay_factor"],
+        config["influence_decay_factor"],
     )
 
     # Plot results
@@ -60,14 +57,6 @@ def run_main_function(config: dict, input_matrix=None):
     }
     log_message = create_log_message(log)
     append_to_log_file(log_message, "logs\\log.txt")
-
-    # Log to mlflow
-    with mlflow.start_run():
-        mlflow.log_params(config)
-        mlflow.log_metric("av_gradient_magnitude", log["av_gradient_magnitude"])
-        mlflow.log_artifact("src\\trainer.py")
-        mlflow.log_artifact("src\\model.py")
-        mlflow.log_artifact(filename_trained_grid)
 
     return fig_input, fig_initial_grid, fig_trained_grid, log
 

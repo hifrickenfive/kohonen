@@ -9,7 +9,7 @@ def update_weights(
     lr: float,
     radius: float,
     current_vector_weights: np.ndarray,
-    influence_tuning_factor: float,
+    influence_decay_factor: float,
 ) -> np.ndarray:
     """
     Update the weights of the nodes in the neighbourhood of the BMU
@@ -27,7 +27,7 @@ def update_weights(
     # Find spatial distance between between nodes position and bmu position
     d_squared = calc_d_squared(node_weights, bmu_weights)
     influence = calc_influence(
-        d_squared, radius, influence_tuning_factor
+        d_squared, radius, influence_decay_factor
     )  # (num nodes, 1)
     updated_weights = node_weights + lr * influence * (
         current_vector_weights - node_weights
@@ -100,19 +100,19 @@ def get_neighbourhood_nodes(
 
 
 def calc_influence(
-    d_squared: np.ndarray[int], radius: float, influence_tuning_factor=1
+    d_squared: np.ndarray[int], radius: float, influence_decay_factor: float = 1.0
 ) -> np.ndarray:
     """Calculate the influence of a node based on its distance from the BMU
 
     Args:
         d_squared: euclidean distance squared
         radius: radius of the neighbourhood
-        influence_tuning_factor: larger value = faster decay
+        influence_decay_factor: larger value = faster decay
 
     Returns:
         influence: the influence of the node
     """
-    return np.exp(-influence_tuning_factor * d_squared / (2 * radius**2))
+    return np.exp(-influence_decay_factor * d_squared / (2 * radius**2))
 
 
 def calc_d_squared(neighbourhood_nodes: np.ndarray, bmu: Tuple[int, int]) -> np.ndarray:

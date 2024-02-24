@@ -11,8 +11,8 @@ def on_button_click():
         "num_input_vectors": st.session_state.num_input_vectors,
         "dim_of_input_vector": 3,
         "random_seed": st.session_state.random_seed,
-        "radius_tuning_factor": st.session_state.radius_tuning_factor,
-        "influence_tuning_factor": st.session_state.influence_tuning_factor,
+        "radius_decay_factor": st.session_state.radius_decay_factor,
+        "influence_decay_factor": st.session_state.influence_decay_factor,
     }
     st.session_state.run_id += 1
 
@@ -38,11 +38,11 @@ st.session_state.num_input_vectors = st.sidebar.slider(
 st.session_state.max_iter = st.sidebar.slider("Max Iterations", 0, 1000, 500)
 st.session_state.learning_rate = st.sidebar.slider("Learning Rate", 0.0, 1.0, 0.1)
 st.session_state.random_seed = st.sidebar.slider("Random Seed", 0, 100, 40)
-st.session_state.radius_tuning_factor = st.sidebar.slider(
-    "Radius Tuning Factor", 0.1, 2.0, 1.0
+st.session_state.radius_decay_factor = st.sidebar.slider(
+    "Radius Decay Factor", 0.1, 1.0, 0.2
 )
-st.session_state.influence_tuning_factor = st.sidebar.slider(
-    "Influence Tuning Factor", 0.1, 100.0, 1.0
+st.session_state.influence_decay_factor = st.sidebar.slider(
+    "Influence Decay Factor", 0.1, 10.0, 1.0
 )
 
 
