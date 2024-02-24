@@ -131,5 +131,5 @@ def calc_d_squared(neighbourhood_nodes: np.ndarray, bmu: tuple):
         (neighbourhood_nodes - bmu) ** 2,
         axis=-1,
         keepdims=True,
-    )
+    )  # -1 to retain (n,1) shape else (n,)
     return d_squared

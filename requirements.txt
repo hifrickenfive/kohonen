@@ -3,6 +3,7 @@ jsonschema-specifications==2023.12.1
 matplotlib==3.8.0
 mlflow==2.10.2   
 numpy==1.26.4
+opencv-python==4.9.0.80 
 pytest==8.0.1 
 PyYAML==6.0.1
 snakeviz==2.2.0
